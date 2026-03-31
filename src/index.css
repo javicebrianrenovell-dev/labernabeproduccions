@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* Core Palette */
+  --surface: #131313;
+  --surface-dim: #0e0e0e;
+  --surface-container-low: #1c1b1b;
+  --surface-container: #20201f;
+  --surface-container-high: #2a2a2a;
+  --surface-container-highest: #353535;
+  --surface-bright: #393939;
+  --primary: #E30613;
+  --primary-soft: #ffb4aa;
+  --on-surface: #e5e2e1;
+  --on-surface-muted: #888888;
+  --outline-variant: #5e3f3b;
+  --white: #ffffff;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Typography */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --display-lg: 3.5rem;
+  --display-md: 2.75rem;
+  --headline-lg: 2rem;
+  --headline-md: 1.5rem;
+  --headline-sm: 1.25rem;
+  --body-lg: 1.125rem;
+  --body-md: 0.9375rem;
+  --body-sm: 0.8125rem;
+  --label-sm: 0.6875rem;
+
+  /* Radius */
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-full: 100px;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font);
+  background-color: var(--surface);
+  color: var(--on-surface);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-container-highest);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--on-surface-muted);
+}
+
+/* Utility animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes countdownGlow {
+  0%, 100% { text-shadow: 0 0 10px rgba(227, 6, 19, 0.3); }
+  50% { text-shadow: 0 0 25px rgba(227, 6, 19, 0.6); }
+}
