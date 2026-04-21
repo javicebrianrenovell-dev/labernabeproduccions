@@ -6,8 +6,8 @@ export default function Footer() {
       <div className="footer__grid">
         <div className="footer__brand">
           <Link to="/" className="navbar__logo">
-            <img src="/images/logo.png" alt="LAPILI" style={{ height: 32, width: 32 }} />
-            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>LAPILI <span style={{ color: '#E30613' }}>PRODUCCIONS</span></span>
+            <img src="/images/logo.svg" alt="La Bernabé" style={{ height: 32, width: 32 }} />
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>LA BERNAB<span style={{ color: '#E30613' }}>É</span> PRODUCCIONS</span>
           </Link>
           <p>La política como producción cultural y ciudadana. Una plataforma audiovisual de proximidad para València.</p>
           <div className="footer__socials">
@@ -39,7 +39,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="footer__bottom">
-        <p>© 2026 LAPILI PRODUCCIONS. Todos los derechos reservados.</p>
+        <p>© 2026 LA BERNABÉ PRODUCCIONS. Todos los derechos reservados.</p>
         <a href="#">Pilar Bernabé — Candidata por València</a>
       </div>
     </footer>

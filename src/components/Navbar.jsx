@@ -13,8 +13,8 @@ export default function Navbar() {
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <Link to="/" className="navbar__logo">
-        <img src="/images/logo.png" alt="LAPILI" />
-        <span>LAPILI <span className="accent">PRODUCCIONS</span></span>
+        <img src="/images/logo.svg" alt="La Bernabé" />
+        <span>LA BERNAB<span className="accent">É</span> PRODUCCIONS</span>
       </Link>
       <ul className="navbar__links">
         <li><Link to="/" className={isActive('/') ? 'active' : ''}>Inicio</Link></li>

@@ -170,7 +170,7 @@ export default function Home() {
 
       <section className="content-section" id="podcast">
         <div className="section-header">
-          <h2>El Podcast de la Pili</h2>
+          <h2>El Podcast de La Bernabé</h2>
           <a href="#">Todos los episodios →</a>
         </div>
         <div className="carousel">

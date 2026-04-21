@@ -136,7 +136,7 @@ export default function Player() {
           <img src="/images/podcast.png" alt="Podcast" className="audio-bar__thumb" />
           <div>
             <p className="audio-bar__title">Ep.12: Movilidad Sostenible</p>
-            <p className="audio-bar__subtitle">El Podcast de la Pili</p>
+            <p className="audio-bar__subtitle">El Podcast de La Bernabé</p>
           </div>
         </div>
         <div className="audio-bar__controls">

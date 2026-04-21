@@ -37,7 +37,7 @@ export default function Podcast() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}>
-          <span className="podcast-hero__label">EL PODCAST DE LA PILI</span>
+          <span className="podcast-hero__label">EL PODCAST DE LA BERNABÉ</span>
           <div className="podcast-hero__badge">ÚLTIMO EPISODIO · EP. {featured.ep}</div>
           <h1 className="podcast-hero__title">{featured.title}</h1>
           <p className="podcast-hero__desc">{featured.desc}</p>
