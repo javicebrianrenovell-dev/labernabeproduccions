@@ -1,10 +1,10 @@
-import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {visionTool} from '@sanity/vision'
-import {schemaTypes, SINGLETON_TYPES} from './schemas'
-import {deskStructure, singletonDocumentNodeActions} from './deskStructure'
+import {schemaTypes, SINGLETON_TYPES} from './schemas/index.js'
+import {deskStructure, singletonDocumentNodeActions} from './deskStructure.js'
 
-export default defineConfig({
+/** @type {import('sanity').Config} */
+export default {
   name: 'default',
   title: 'Pilar Bernabé — Plataforma',
 
@@ -15,7 +15,6 @@ export default defineConfig({
 
   schema: {
     types: schemaTypes,
-    // No mostrar "Create new" para singletons en la lista global
     templates: (templates) =>
       templates.filter(({schemaType}) => !SINGLETON_TYPES.has(schemaType)),
   },
@@ -23,4 +22,4 @@ export default defineConfig({
   document: {
     actions: singletonDocumentNodeActions,
   },
-})
+}
