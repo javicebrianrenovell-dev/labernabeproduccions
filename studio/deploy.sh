@@ -29,14 +29,15 @@ grep -q "SANITY_STUDIO_PROJECT_ID=${PROJECT_ID}" .env || {
 }
 
 echo "── 2/5  Login Sanity (abre navegador si no hay sesión) ──────"
-npx --no-install sanity login
+# Sanity CLI v6 requiere --provider en modo desatendido. Cuenta vinculada a Google.
+npx --no-install sanity login --provider google
 
 echo "── 3/5  Build del Studio ────────────────────────────────────"
 npx --no-install sanity build --yes
 
 echo "── 4/5  Deploy a ${STUDIO_URL} ──────────────────────────────"
-# --no-build porque ya hicimos build; --studio-host fija el subdominio.
-npx --no-install sanity deploy --no-build --studio-host "${HOSTNAME}"
+# --no-build porque ya hicimos build; --url fija el hostname (antes --studio-host en v3).
+npx --no-install sanity deploy --no-build --url "${HOSTNAME}" --yes
 
 echo "── 5/5  Done ─────────────────────────────────────────────────"
 cat <<EOF
