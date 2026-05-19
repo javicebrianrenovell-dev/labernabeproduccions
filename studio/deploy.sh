@@ -55,8 +55,11 @@ Acciones manuales pendientes (≈5 min):
   • Members → ${MANAGE_URL}/members
       invitar al equipo editor (rol "Editor" basta; "Administrator" solo para Javi).
   • Dataset visibility → ${MANAGE_URL}/datasets
-      confirmar que "${DATASET}" está en "Private" si todavía no se ha cambiado
-      (contexto político: drafts no deben filtrarse vía GROQ público).
+      "${DATASET}" debe estar en "Public" porque la web pilarbernabe.es lee
+      GROQ sin autenticación. Los drafts NO se filtran al público en Sanity
+      (están aislados por path "drafts.*" independientemente de la visibility);
+      lo único que el dataset public expone son los documentos publicados, que
+      es justo lo que la web necesita servir.
 
 Tras invitar miembros, ellos reciben mail y acceden directo a ${STUDIO_URL}.
 
