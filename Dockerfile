@@ -1,6 +1,14 @@
 # Stage 1: Build
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# Build args expuestos por Dokploy (Build-time Arguments).
+# Vite los lee como import.meta.env.VITE_* al hacer el build.
+ARG VITE_SANITY_PROJECT_ID
+ARG VITE_SANITY_DATASET=production
+ENV VITE_SANITY_PROJECT_ID=$VITE_SANITY_PROJECT_ID
+ENV VITE_SANITY_DATASET=$VITE_SANITY_DATASET
+
 COPY package*.json ./
 RUN npm ci
 COPY . .
