@@ -1,63 +1,141 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { fetchPaginaPodcast, fetchEpisodios, fetchEpisodioDestacado } from '../sanity/queries'
+import { urlFor } from '../sanity/imageUrl'
 
 const PlayIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5v14l11-7z"/></svg>
 const PauseIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
 
-const EPISODES = [
-  { id: 1, ep: 12, title: 'Movilidad Sostenible', desc: 'Hablamos con el concejal de movilidad sobre el nuevo plan ciclista de la ciudad. Más de 40 km de carril bici antes de 2027.', date: '28 Mar 2026', duration: '45 min', img: '/images/podcast.png', featured: true },
-  { id: 2, ep: 11, title: 'Vivienda Joven en València', desc: 'La crisis de la vivienda no es inevitable. Analizamos las medidas que ya están funcionando y las que necesitan más ambición.', date: '21 Mar 2026', duration: '38 min', img: '/images/podcast2.png' },
-  { id: 3, ep: 10, title: 'Cultura de Barrio', desc: 'De las fallas a los festivales de cine independiente: cómo la cultura vertebra la identidad de cada barrio.', date: '14 Mar 2026', duration: '42 min', img: '/images/podcast3.png' },
-  { id: 4, ep: 9, title: 'Transición Energética', desc: 'Paneles solares en edificios municipales, comunidades energéticas y el camino hacia una València neutra en carbono.', date: '7 Mar 2026', duration: '50 min', img: '/images/podcast.png' },
-  { id: 5, ep: 8, title: 'Educación Pública', desc: 'Inversión récord en escuelas infantiles y el programa de becas comedor que ya llega a 12.000 familias.', date: '28 Feb 2026', duration: '35 min', img: '/images/podcast2.png' },
-  { id: 6, ep: 7, title: 'Turismo Sostenible', desc: '¿Se puede crecer sin destruir? Un modelo turístico que respeta a vecinos y visitantes por igual.', date: '21 Feb 2026', duration: '41 min', img: '/images/podcast3.png' },
-  { id: 7, ep: 6, title: 'Espacios Verdes', desc: 'El Jardín del Turia se amplía: nuevas zonas verdes, parques de barrio y la revolución del arbolado urbano.', date: '14 Feb 2026', duration: '37 min', img: '/images/podcast.png' },
-  { id: 8, ep: 5, title: 'Presupuestos Participativos', desc: 'Tú decides dónde va el dinero público. Así funcionan los presupuestos participativos de 2026.', date: '7 Feb 2026', duration: '44 min', img: '/images/community.png' },
+const FALLBACK_PAGE = {
+  hero: {
+    label: 'EL PODCAST DE LA BERNABÉ',
+    badgePrefix: 'ÚLTIMO EPISODIO · EP.',
+    ctaTextoEscuchar: 'Escuchar Ahora',
+    ctaTextoPausar: 'Pausar',
+  },
+  plataformas: [
+    { nombre: 'Spotify', icono: '🎵', url: '#' },
+    { nombre: 'Apple Podcasts', icono: '🎧', url: '#' },
+    { nombre: 'YouTube', icono: '▶️', url: '#' },
+    { nombre: 'iVoox', icono: '📻', url: '#' },
+  ],
+  tituloLista: 'Todos los Episodios',
+  textoEscuchaPlataformas: 'Escúchalo en tu plataforma favorita:',
+  cta: {
+    titulo: 'No te pierdas ningún episodio',
+    descripcion: 'Suscríbete al Guion Semanal y recibe cada nuevo episodio directamente en tu bandeja.',
+    placeholderEmail: 'tu@email.com',
+    textoBoton: 'Suscribirme',
+  },
+}
+
+const FALLBACK_EPISODIOS = [
+  { _id: 'fe1', numero: 12, titulo: 'Movilidad Sostenible', descripcion: 'Hablamos con el concejal de movilidad sobre el nuevo plan ciclista de la ciudad. Más de 40 km de carril bici antes de 2027.', fecha: '2026-03-28', duracion: '45 min', destacadoHero: true, imagenUrl: '/images/podcast.png' },
+  { _id: 'fe2', numero: 11, titulo: 'Vivienda Joven en València', descripcion: 'La crisis de la vivienda no es inevitable. Analizamos las medidas que ya están funcionando y las que necesitan más ambición.', fecha: '2026-03-21', duracion: '38 min', imagenUrl: '/images/podcast2.png' },
+  { _id: 'fe3', numero: 10, titulo: 'Cultura de Barrio', descripcion: 'De las fallas a los festivales de cine independiente: cómo la cultura vertebra la identidad de cada barrio.', fecha: '2026-03-14', duracion: '42 min', imagenUrl: '/images/podcast3.png' },
+  { _id: 'fe4', numero: 9, titulo: 'Transición Energética', descripcion: 'Paneles solares en edificios municipales, comunidades energéticas y el camino hacia una València neutra en carbono.', fecha: '2026-03-07', duracion: '50 min', imagenUrl: '/images/podcast.png' },
+  { _id: 'fe5', numero: 8, titulo: 'Educación Pública', descripcion: 'Inversión récord en escuelas infantiles y el programa de becas comedor que ya llega a 12.000 familias.', fecha: '2026-02-28', duracion: '35 min', imagenUrl: '/images/podcast2.png' },
+  { _id: 'fe6', numero: 7, titulo: 'Turismo Sostenible', descripcion: '¿Se puede crecer sin destruir? Un modelo turístico que respeta a vecinos y visitantes por igual.', fecha: '2026-02-21', duracion: '41 min', imagenUrl: '/images/podcast3.png' },
+  { _id: 'fe7', numero: 6, titulo: 'Espacios Verdes', descripcion: 'El Jardín del Turia se amplía: nuevas zonas verdes, parques de barrio y la revolución del arbolado urbano.', fecha: '2026-02-14', duracion: '37 min', imagenUrl: '/images/podcast.png' },
+  { _id: 'fe8', numero: 5, titulo: 'Presupuestos Participativos', descripcion: 'Tú decides dónde va el dinero público. Así funcionan los presupuestos participativos de 2026.', fecha: '2026-02-07', duracion: '44 min', imagenUrl: '/images/community.png' },
 ]
 
-const PLATFORMS = [
-  { name: 'Spotify', icon: '🎵' },
-  { name: 'Apple Podcasts', icon: '🎧' },
-  { name: 'YouTube', icon: '▶️' },
-  { name: 'iVoox', icon: '📻' },
-]
+function imageUrlFromSanity(img, w = 600, h = 600) {
+  if (!img) return null
+  try {
+    return urlFor(img).width(w).height(h).fit('crop').auto('format').url()
+  } catch {
+    return null
+  }
+}
+
+function formatFecha(iso) {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`
+  } catch {
+    return iso
+  }
+}
 
 export default function Podcast() {
+  const [page, setPage] = useState(FALLBACK_PAGE)
+  const [episodios, setEpisodios] = useState(FALLBACK_EPISODIOS)
+  const [destacado, setDestacado] = useState(FALLBACK_EPISODIOS[0])
   const [playing, setPlaying] = useState(null)
-  const featured = EPISODES[0]
+
+  useEffect(() => {
+    let cancelled = false
+    fetchPaginaPodcast()
+      .then((data) => {
+        if (cancelled || !data) return
+        setPage({
+          hero: { ...FALLBACK_PAGE.hero, ...(data.hero || {}) },
+          plataformas: data.plataformas?.length ? data.plataformas : FALLBACK_PAGE.plataformas,
+          tituloLista: data.tituloLista || FALLBACK_PAGE.tituloLista,
+          textoEscuchaPlataformas: data.textoEscuchaPlataformas || FALLBACK_PAGE.textoEscuchaPlataformas,
+          cta: { ...FALLBACK_PAGE.cta, ...(data.cta || {}) },
+        })
+      })
+      .catch((err) => console.error('[podcast] page error:', err))
+
+    fetchEpisodios({ limit: 30 })
+      .then((list) => {
+        if (cancelled || !list?.length) return
+        const norm = list.map((e) => ({
+          ...e,
+          imagenUrl: imageUrlFromSanity(e.imagen, 600, 600) || '/images/podcast.png',
+        }))
+        setEpisodios(norm)
+      })
+      .catch((err) => console.error('[podcast] lista error:', err))
+
+    fetchEpisodioDestacado()
+      .then((e) => {
+        if (cancelled || !e) return
+        setDestacado({ ...e, imagenUrl: imageUrlFromSanity(e.imagen, 1920, 1080) || '/images/podcast.png' })
+      })
+      .catch((err) => console.error('[podcast] destacado error:', err))
+
+    return () => { cancelled = true }
+  }, [])
+
+  const { hero, plataformas, tituloLista, textoEscuchaPlataformas, cta } = page
 
   return (
     <div className="podcast-page">
       {/* HERO — Featured Episode */}
       <section className="podcast-hero">
         <div className="podcast-hero__bg">
-          <img src={featured.img} alt={featured.title} />
+          <img src={destacado.imagenUrl} alt={destacado.titulo} />
         </div>
         <motion.div className="podcast-hero__content"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}>
-          <span className="podcast-hero__label">EL PODCAST DE LA BERNABÉ</span>
-          <div className="podcast-hero__badge">ÚLTIMO EPISODIO · EP. {featured.ep}</div>
-          <h1 className="podcast-hero__title">{featured.title}</h1>
-          <p className="podcast-hero__desc">{featured.desc}</p>
+          <span className="podcast-hero__label">{hero.label}</span>
+          <div className="podcast-hero__badge">{hero.badgePrefix} {destacado.numero}</div>
+          <h1 className="podcast-hero__title">{destacado.titulo}</h1>
+          <p className="podcast-hero__desc">{destacado.descripcion}</p>
           <div className="podcast-hero__actions">
-            <button className="btn-play" onClick={() => setPlaying(playing === featured.id ? null : featured.id)}>
-              {playing === featured.id ? <PauseIcon /> : <PlayIcon />}
-              {playing === featured.id ? 'Pausar' : 'Escuchar Ahora'}
+            <button className="btn-play" onClick={() => setPlaying(playing === destacado._id ? null : destacado._id)}>
+              {playing === destacado._id ? <PauseIcon /> : <PlayIcon />}
+              {playing === destacado._id ? hero.ctaTextoPausar : hero.ctaTextoEscuchar}
             </button>
-            <span className="podcast-hero__meta">{featured.duration} · {featured.date}</span>
+            <span className="podcast-hero__meta">{destacado.duracion} · {formatFecha(destacado.fecha)}</span>
           </div>
         </motion.div>
       </section>
 
       {/* PLATFORMS */}
       <section className="podcast-platforms">
-        <p>Escúchalo en tu plataforma favorita:</p>
+        <p>{textoEscuchaPlataformas}</p>
         <div className="podcast-platforms__list">
-          {PLATFORMS.map(p => (
-            <a key={p.name} href="#" className="platform-chip">
-              <span>{p.icon}</span> {p.name}
+          {plataformas.map((p) => (
+            <a key={p.nombre} href={p.url} className="platform-chip" target="_blank" rel="noreferrer">
+              <span>{p.icono}</span> {p.nombre}
             </a>
           ))}
         </div>
@@ -65,36 +143,36 @@ export default function Podcast() {
 
       {/* EPISODE LIST */}
       <section className="podcast-episodes">
-        <h2>Todos los Episodios</h2>
+        <h2>{tituloLista}</h2>
         <div className="episodes-list">
-          {EPISODES.map((ep, i) => (
+          {episodios.map((ep, i) => (
             <motion.div
-              className={`episode-row ${playing === ep.id ? 'playing' : ''}`}
-              key={ep.id}
+              className={`episode-row ${playing === ep._id ? 'playing' : ''}`}
+              key={ep._id}
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}>
               <div className="episode-row__thumb">
-                <img src={ep.img} alt={ep.title} />
+                <img src={ep.imagenUrl} alt={ep.titulo} />
                 <button
                   className="episode-row__play"
-                  onClick={() => setPlaying(playing === ep.id ? null : ep.id)}>
-                  {playing === ep.id ? <PauseIcon /> : <PlayIcon />}
+                  onClick={() => setPlaying(playing === ep._id ? null : ep._id)}>
+                  {playing === ep._id ? <PauseIcon /> : <PlayIcon />}
                 </button>
               </div>
               <div className="episode-row__number">
-                <span className="episode-row__ep">EP. {String(ep.ep).padStart(2, '0')}</span>
+                <span className="episode-row__ep">EP. {String(ep.numero).padStart(2, '0')}</span>
               </div>
               <div className="episode-row__info">
-                <p className="episode-row__title">{ep.title}</p>
-                <p className="episode-row__desc">{ep.desc}</p>
+                <p className="episode-row__title">{ep.titulo}</p>
+                <p className="episode-row__desc">{ep.descripcion}</p>
               </div>
               <div className="episode-row__meta">
-                <span className="episode-row__duration">{ep.duration}</span>
-                <span className="episode-row__date">{ep.date}</span>
+                <span className="episode-row__duration">{ep.duracion}</span>
+                <span className="episode-row__date">{formatFecha(ep.fecha)}</span>
               </div>
-              {playing === ep.id && (
+              {playing === ep._id && (
                 <div className="episode-row__wave">
                   {[...Array(5)].map((_, j) => <div key={j} className="bar" />)}
                 </div>
@@ -110,11 +188,11 @@ export default function Podcast() {
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}>
-          <h2>No te pierdas ningún episodio</h2>
-          <p>Suscríbete al Guion Semanal y recibe cada nuevo episodio directamente en tu bandeja.</p>
-          <form className="podcast-cta__form" onSubmit={e => e.preventDefault()}>
-            <input type="email" placeholder="tu@email.com" required />
-            <button type="submit" className="btn-play">Suscribirme</button>
+          <h2>{cta.titulo}</h2>
+          <p>{cta.descripcion}</p>
+          <form className="podcast-cta__form" onSubmit={(e) => e.preventDefault()}>
+            <input type="email" placeholder={cta.placeholderEmail} required />
+            <button type="submit" className="btn-play">{cta.textoBoton}</button>
           </form>
         </motion.div>
       </section>

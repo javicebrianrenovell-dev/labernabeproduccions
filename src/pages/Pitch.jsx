@@ -1,8 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { fetchPaginaPitch } from '../sanity/queries'
 
-const CATEGORIES = ['Todas', 'Urbanismo', 'Cultura', 'Movilidad', 'Medio Ambiente', 'Educación']
+const FALLBACK_PAGE = {
+  hero: {
+    tituloLinea1: 'Tu Idea Puede',
+    tituloLinea2Pre: 'Cambiar ',
+    tituloLinea2Enfasis: 'València',
+    subtitulo: 'Sube tu propuesta. La comunidad vota. Las mejores ideas se llevan a producción.',
+    ctaTexto: 'Sube Tu Idea',
+  },
+  categorias: ['Todas', 'Urbanismo', 'Cultura', 'Movilidad', 'Medio Ambiente', 'Educación'],
+  form: {
+    titulo: 'Tu Pitch',
+    placeholderTitulo: 'Resume tu idea en una frase',
+    placeholderDesc: 'Describe tu propuesta con detalle…',
+    textoBoton: 'Enviar Mi Pitch',
+  },
+  tituloLeaderboard: '🏆 Ideas Más Aplaudidas',
+}
 
+// NOTA: Ideas y leaderboard se migran a Sanity en Fase 2B (son contenido user-generated
+// que requiere su propio flujo de moderación y aplausos persistentes).
 const IDEAS = [
   { id: 1, author: 'María García', barrio: 'Russafa', date: 'Hace 2 días', title: 'Jardín vertical en la fachada del Mercado', desc: 'Propongo instalar un jardín vertical en la fachada sur del Mercado de Russafa. Reduciría la temperatura interior y daría un aspecto espectacular al barrio.', category: 'Medio Ambiente', claps: 342, inProduction: true },
   { id: 2, author: 'Carlos López', barrio: 'Benimaclet', date: 'Hace 3 días', title: 'Zona 30 en las calles escolares', desc: 'Limitar la velocidad a 30 km/h en un radio de 200m alrededor de los colegios del barrio. Seguridad infantil es lo primero.', category: 'Movilidad', claps: 289 },
@@ -21,16 +40,32 @@ const LEADERBOARD = [
 ]
 
 export default function Pitch() {
+  const [page, setPage] = useState(FALLBACK_PAGE)
   const [activeCategory, setActiveCategory] = useState('Todas')
   const [clapped, setClapped] = useState({})
   const [showForm, setShowForm] = useState(false)
 
-  const filteredIdeas = activeCategory === 'Todas'
-    ? IDEAS
-    : IDEAS.filter(i => i.category === activeCategory)
+  useEffect(() => {
+    let cancelled = false
+    fetchPaginaPitch()
+      .then((data) => {
+        if (cancelled || !data) return
+        setPage({
+          hero: { ...FALLBACK_PAGE.hero, ...(data.hero || {}) },
+          categorias: data.categorias?.length ? data.categorias : FALLBACK_PAGE.categorias,
+          form: { ...FALLBACK_PAGE.form, ...(data.form || {}) },
+          tituloLeaderboard: data.tituloLeaderboard || FALLBACK_PAGE.tituloLeaderboard,
+        })
+      })
+      .catch((err) => console.error('[pitch] page error:', err))
+    return () => { cancelled = true }
+  }, [])
+
+  const filteredIdeas =
+    activeCategory === 'Todas' ? IDEAS : IDEAS.filter((i) => i.category === activeCategory)
 
   const handleClap = (id) => {
-    setClapped(prev => ({ ...prev, [id]: !prev[id] }))
+    setClapped((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
   const medalColor = (pos) => {
@@ -39,6 +74,8 @@ export default function Pitch() {
     if (pos === 3) return '#CD7F32'
     return 'var(--on-surface-muted)'
   }
+
+  const { hero, categorias, form, tituloLeaderboard } = page
 
   return (
     <div className="pitch-page">
@@ -50,12 +87,10 @@ export default function Pitch() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}>
           <h1 className="pitch-hero__title">
-            Tu Idea Puede<br />Cambiar <span>València</span>
+            {hero.tituloLinea1}<br />{hero.tituloLinea2Pre}<span>{hero.tituloLinea2Enfasis}</span>
           </h1>
-          <p className="pitch-hero__subtitle">
-            Sube tu propuesta. La comunidad vota. Las mejores ideas se llevan a producción.
-          </p>
-          <button className="btn-play" onClick={() => setShowForm(true)}>Sube Tu Idea</button>
+          <p className="pitch-hero__subtitle">{hero.subtitulo}</p>
+          <button className="btn-play" onClick={() => setShowForm(true)}>{hero.ctaTexto}</button>
         </motion.div>
       </section>
 
@@ -69,24 +104,24 @@ export default function Pitch() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}>
               <button className="pitch-form__close" onClick={() => setShowForm(false)}>✕</button>
-              <h2>Tu Pitch</h2>
-              <form onSubmit={e => { e.preventDefault(); setShowForm(false) }}>
+              <h2>{form.titulo}</h2>
+              <form onSubmit={(e) => { e.preventDefault(); setShowForm(false) }}>
                 <div className="club-form__field">
                   <label>Título de tu idea</label>
-                  <input type="text" placeholder="Resume tu idea en una frase" required />
+                  <input type="text" placeholder={form.placeholderTitulo} required />
                 </div>
                 <div className="club-form__field">
                   <label>Descripción</label>
-                  <textarea placeholder="Describe tu propuesta con detalle…" rows={4} required />
+                  <textarea placeholder={form.placeholderDesc} rows={4} required />
                 </div>
                 <div className="club-form__field">
                   <label>Categoría</label>
                   <select required>
                     <option value="">Selecciona una categoría</option>
-                    {CATEGORIES.slice(1).map(c => <option key={c}>{c}</option>)}
+                    {categorias.filter((c) => c !== 'Todas').map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
-                <button type="submit" className="btn-play club-form__submit">Enviar Mi Pitch</button>
+                <button type="submit" className="btn-play club-form__submit">{form.textoBoton}</button>
               </form>
             </motion.div>
           </motion.div>
@@ -95,7 +130,7 @@ export default function Pitch() {
 
       {/* CATEGORY FILTER */}
       <div className="pitch-filters">
-        {CATEGORIES.map(cat => (
+        {categorias.map((cat) => (
           <button key={cat}
             className={`filter-chip ${activeCategory === cat ? 'active' : ''}`}
             onClick={() => setActiveCategory(cat)}>
@@ -140,9 +175,9 @@ export default function Pitch() {
 
         {/* LEADERBOARD */}
         <aside className="pitch-leaderboard">
-          <h3>🏆 Ideas Más Aplaudidas</h3>
+          <h3>{tituloLeaderboard}</h3>
           <div className="leaderboard-list">
-            {LEADERBOARD.map(item => (
+            {LEADERBOARD.map((item) => (
               <div className="leaderboard-item" key={item.pos}>
                 <span className="leaderboard-item__pos" style={{ color: medalColor(item.pos) }}>
                   #{item.pos}
