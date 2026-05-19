@@ -69,6 +69,30 @@ export default {
       initialValue: false,
     },
     {
+      name: 'seccionHome',
+      title: 'Sección en la página de inicio',
+      type: 'string',
+      description:
+        'Determina en qué carrusel de la home aparece. "Estrenos de Barrio", "Documentales" o "Edu-Política".',
+      options: {
+        list: [
+          {title: 'Estrenos de Barrio', value: 'estrenos'},
+          {title: 'Documentales', value: 'documentales'},
+          {title: 'Edu-Política', value: 'edupolitica'},
+          {title: 'No mostrar en Home', value: 'none'},
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'estrenos',
+    },
+    {
+      name: 'badgeHome',
+      title: 'Etiqueta especial en Home',
+      type: 'string',
+      description:
+        'Opcional. Ej: "NUEVO". Solo se muestra si el vídeo aparece en la sección Estrenos.',
+    },
+    {
       name: 'fechaPublicacion',
       title: 'Fecha de publicación',
       type: 'datetime',
