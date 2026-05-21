@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Manual editorial — La Bernabé Produccions</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --brand-black: #131313;
+    --brand-red: #E30613;
+    --brand-red-soft: #fdecee;
+    --ink: #131313;
+    --ink-soft: #444444;
+    --ink-muted: #6B6B6B;
+    --surface: #FFFFFF;
+    --surface-soft: #F8F8F7;
+    --surface-card: #FAFAF9;
+    --border: #E5E5E5;
+    --border-strong: #131313;
+    --code-bg: #F1F1F0;
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm 16mm 18mm 16mm;
+  }
+  @page :first { margin: 0; }
+  @page cover { margin: 0; }
+  @page toc :first { margin: 22mm 16mm; }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink);
+    background: var(--surface);
+    -webkit-font-smoothing: antialiased;
+    font-size: 10.5pt;
+    line-height: 1.55;
+  }
+
+  /* ───────────────── PORTADA ───────────────── */
+  .cover {
+    page: cover;
+    page-break-after: always;
+    height: 297mm;
+    width: 210mm;
+    background: var(--brand-black);
+    color: #FFFFFF;
+    padding: 24mm 22mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    top: -40mm;
+    right: -40mm;
+    width: 180mm;
+    height: 180mm;
+    background: radial-gradient(circle, rgba(227,6,19,0.18) 0%, rgba(227,6,19,0) 70%);
+    pointer-events: none;
+  }
+  .cover-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14mm;
+    z-index: 2;
+  }
+  .cover-logo {
+    width: 32mm;
+    height: 32mm;
+    background: #FFFFFF;
+    border-radius: 4mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .cover-logo svg { width: 26mm; height: 26mm; }
+  .cover-brand {
+    font-weight: 800;
+    font-size: 18pt;
+    letter-spacing: 0.06em;
+    line-height: 1.05;
+  }
+  .cover-brand .accent { color: var(--brand-red); }
+  .cover-brand-sub {
+    font-weight: 400;
+    font-size: 10pt;
+    color: #B0B0B0;
+    letter-spacing: 0.02em;
+    margin-top: 1.5mm;
+  }
+  .cover-title {
+    z-index: 2;
+    margin-top: auto;
+  }
+  .cover-eyebrow {
+    font-size: 10pt;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--brand-red);
+    margin-bottom: 6mm;
+  }
+  .cover-title h1 {
+    font-size: 56pt;
+    font-weight: 900;
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .cover-title h1 .red { color: var(--brand-red); }
+  .cover-subtitle {
+    font-size: 14pt;
+    font-weight: 400;
+    color: #D4D4D4;
+    margin-top: 8mm;
+    max-width: 130mm;
+    line-height: 1.4;
+  }
+  .cover-footer {
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 9pt;
+    color: #B0B0B0;
+    border-top: 1px solid rgba(255,255,255,0.18);
+    padding-top: 6mm;
+  }
+  .cover-footer .left { max-width: 100mm; }
+  .cover-footer .left .claim {
+    font-style: italic;
+    color: #E5E2E1;
+    margin-bottom: 2mm;
+  }
+  .cover-footer .right { text-align: right; }
+
+  /* ───────────────── TOC ───────────────── */
+  .toc {
+    page: toc;
+    page-break-after: always;
+    padding-top: 4mm;
+  }
+  .toc h2 {
+    font-size: 26pt;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin: 0 0 2mm;
+  }
+  .toc h2 .red { color: var(--brand-red); }
+  .toc .toc-eyebrow {
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brand-red);
+    margin-bottom: 4mm;
+  }
+  .toc ol {
+    list-style: none;
+    padding: 0;
+    margin: 10mm 0 0;
+    counter-reset: toc;
+  }
+  .toc li {
+    counter-increment: toc;
+    display: flex;
+    align-items: baseline;
+    gap: 4mm;
+    padding: 3.2mm 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11pt;
+    font-weight: 500;
+  }
+  .toc li::before {
+    content: counter(toc, decimal-leading-zero);
+    color: var(--brand-red);
+    font-weight: 800;
+    font-size: 11pt;
+    min-width: 9mm;
+  }
+  .toc li .dots { flex: 1; border-bottom: 1px dotted #C8C8C8; transform: translateY(-2mm); }
+
+  /* ───────────────── CONTENIDO ───────────────── */
+  .content { padding: 0; }
+  section {
+    page-break-inside: auto;
+    padding-top: 4mm;
+  }
+  section + section { margin-top: 6mm; }
+
+  h2.section-title {
+    counter-increment: sec;
+    font-size: 22pt;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin: 0 0 5mm;
+    padding-top: 2mm;
+    border-top: 4px solid var(--brand-red);
+    padding-top: 6mm;
+    line-height: 1.1;
+    page-break-after: avoid;
+  }
+  h2.section-title .num {
+    display: inline-block;
+    color: var(--brand-red);
+    font-weight: 900;
+    margin-right: 4mm;
+    font-variant-numeric: tabular-nums;
+  }
+
+  h3 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 7mm 0 2.5mm;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 5mm 0 1.5mm;
+    page-break-after: avoid;
+  }
+  p {
+    margin: 0 0 3mm;
+    color: var(--ink-soft);
+  }
+  ul, ol {
+    margin: 0 0 4mm;
+    padding-left: 6mm;
+    color: var(--ink-soft);
+  }
+  ul li, ol li { margin-bottom: 1.4mm; }
+  ul li::marker { color: var(--brand-red); }
+  ol { padding-left: 7mm; }
+  ol li::marker { color: var(--brand-red); font-weight: 700; }
+
+  strong { color: var(--ink); font-weight: 700; }
+  em { color: var(--ink-soft); }
+  a { color: var(--brand-red); text-decoration: none; border-bottom: 1px solid var(--brand-red-soft); }
+  code {
+    font-family: 'JetBrains Mono', 'Source Code Pro', Menlo, Consolas, monospace;
+    font-size: 9pt;
+    background: var(--code-bg);
+    color: var(--brand-red);
+    padding: 0.4mm 1.5mm;
+    border-radius: 1mm;
+  }
+
+  blockquote, .callout {
+    background: var(--surface-card);
+    border-left: 3px solid var(--brand-red);
+    padding: 3.5mm 4mm;
+    margin: 4mm 0;
+    color: var(--ink-soft);
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+  blockquote strong, .callout strong { color: var(--ink); }
+
+  .callout-warn {
+    background: #FFF7EC;
+    border-left-color: #F59E0B;
+  }
+
+  .faq dt {
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: 4mm;
+    font-size: 10.5pt;
+  }
+  .faq dd {
+    margin: 1mm 0 0;
+    padding-left: 0;
+    color: var(--ink-soft);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 3mm 0 4mm;
+    font-size: 9.5pt;
+  }
+  .field-table th, .field-table td {
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    padding: 2mm 2.5mm;
+    vertical-align: top;
+  }
+  .field-table th {
+    background: var(--surface-soft);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .field-table td:first-child { font-weight: 600; color: var(--ink); width: 38mm; }
+
+  hr {
+    border: 0;
+    height: 1px;
+    background: var(--border);
+    margin: 8mm 0;
+  }
+
+  /* Final */
+  .lastpage {
+    margin-top: 12mm;
+    padding-top: 6mm;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 9pt;
+  }
+</style>
+</head>
+<body>
+
+<!-- ─────────────────────────── PORTADA ─────────────────────────── -->
+<div class="cover">
+  <div class="cover-logo-row">
+    <div class="cover-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" aria-label="La Bernabé Produccions">
+        <rect width="100" height="100" rx="16" fill="#131313"/>
+        <g fill="#FFFFFF">
+          <rect x="28" y="34" width="10" height="44"/>
+          <rect x="28" y="34" width="42" height="10"/>
+          <rect x="28" y="51" width="32" height="9"/>
+          <rect x="28" y="68" width="42" height="10"/>
+        </g>
+        <polygon points="54,13 70,13 62,26 46,26" fill="#E30613"/>
+      </svg>
+    </div>
+    <div>
+      <div class="cover-brand">LA BERNAB<span class="accent">É</span> PRODUCCIONS</div>
+      <div class="cover-brand-sub">Plataforma audiovisual de proximidad</div>
+    </div>
+  </div>
+
+  <div class="cover-title">
+    <div class="cover-eyebrow">Documento interno · v1.0</div>
+    <h1>Manual<br/>editorial<span class="red">.</span></h1>
+    <p class="cover-subtitle">
+      Guía operativa para que el equipo lleve el día a día de los contenidos de
+      <strong style="color:#fff;">pilarbernabe.es</strong> desde Sanity Studio.
+    </p>
+  </div>
+
+  <div class="cover-footer">
+    <div class="left">
+      <div class="claim">«La política como producción cultural y ciudadana. Una plataforma audiovisual de proximidad para València.»</div>
+      <div>Pilar Bernabé — Candidata por València</div>
+    </div>
+    <div class="right">
+      Mayo 2026<br/>
+      Edición consultoría — Imedes
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────── TOC ─────────────────────────── -->
+<div class="toc">
+  <div class="toc-eyebrow">Contenido</div>
+  <h2>Cómo navegar este manual<span class="red">.</span></h2>
+  <ol>
+    <li>¿Qué es esto y dónde se entra?<span class="dots"></span></li>
+    <li>Vista general — qué hay en el menú izquierdo<span class="dots"></span></li>
+    <li>Cómo publicar un vídeo<span class="dots"></span></li>
+    <li>Cómo publicar un episodio de podcast<span class="dots"></span></li>
+    <li>Cómo añadir un testimonio del Club<span class="dots"></span></li>
+    <li>Cómo crear o editar una categoría<span class="dots"></span></li>
+    <li>Editar las páginas (Inicio, Club, Pitch, Podcast)<span class="dots"></span></li>
+    <li>Configuración general<span class="dots"></span></li>
+    <li>Borradores, publicación y deshacer<span class="dots"></span></li>
+    <li>Buenas prácticas para imágenes<span class="dots"></span></li>
+    <li>Errores comunes y preguntas frecuentes<span class="dots"></span></li>
+    <li>Roles y permisos<span class="dots"></span></li>
+    <li>Contacto y soporte<span class="dots"></span></li>
+  </ol>
+</div>
+
+<!-- ─────────────────────────── CONTENIDO ─────────────────────────── -->
+<div class="content">
+
+<section>
+<h2 class="section-title"><span class="num">01</span>¿Qué es esto y dónde se entra?</h2>
+<p>La web <strong>pilarbernabe.es</strong> está conectada a un panel de gestión llamado <strong>Sanity Studio</strong>. Tú escribes en el Studio, la web se actualiza sola.</p>
+<ul>
+  <li><strong>URL del Studio:</strong> <a href="https://pilarbernabe-platform.sanity.studio">pilarbernabe-platform.sanity.studio</a></li>
+  <li><strong>Cómo entras:</strong> con tu cuenta de Google (la del email con el que se te ha invitado). Pulsas «Login with Google» y listo. No hay contraseña que recordar.</li>
+  <li><strong>Si no te llega la invitación:</strong> revisa la carpeta de spam y, si no aparece, escribe a Javi para que la reenvíe.</li>
+</ul>
+<blockquote>Si tienes dudas en mitad de algo, no toques más y avisa a Javi (<a href="mailto:javi.cebrian.renovell@gmail.com">javi.cebrian.renovell@gmail.com</a>). Es más rápido que deshacer un cambio.</blockquote>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">02</span>Vista general — qué hay en el menú izquierdo</h2>
+<p>Cuando entras, el panel se divide en dos columnas principales:</p>
+<h3>Columna izquierda — menú «Contenido»</h3>
+<p>Agrupado en dos bloques:</p>
+<ol>
+  <li><strong>Páginas únicas</strong> (singletons): solo hay una de cada y nunca se borran. Aquí se edita el texto que ya está montado en la web.
+    <ul>
+      <li>Configuración general</li>
+      <li>Página: Inicio</li>
+      <li>Página: Club</li>
+      <li>Página: Pitch</li>
+      <li>Página: Podcast</li>
+    </ul>
+  </li>
+  <li><strong>Colecciones</strong>: listas donde añades elementos nuevos cada vez.
+    <ul>
+      <li>Vídeos</li>
+      <li>Categorías</li>
+      <li>Episodios de podcast</li>
+      <li>Testimonios (Club)</li>
+    </ul>
+  </li>
+</ol>
+<h3>Columnas central y derecha</h3>
+<p><strong>Columna central:</strong> lista de elementos de la sección que has elegido. <strong>Columna derecha:</strong> formulario para editar el elemento concreto.</p>
+<blockquote>Regla mental simple: si quieres <strong>cambiar un texto que ya está en la web</strong>, lo más probable es que esté en una <strong>página única</strong>. Si quieres <strong>añadir algo nuevo</strong> (un vídeo, un episodio…), lo encuentras en <strong>colecciones</strong>.</blockquote>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">03</span>Cómo publicar un vídeo</h2>
+<p>Es la operación más frecuente. Se hace en menos de 3 minutos cuando tienes el material listo.</p>
+<h3>Antes de empezar, ten a mano</h3>
+<ul>
+  <li>El <strong>título</strong> del vídeo.</li>
+  <li>Una <strong>miniatura</strong> en formato 16:9 (mínimo 1280×720 px, máximo 4 MB). JPG o PNG.</li>
+  <li>La <strong>duración</strong> del vídeo (ej: <code>4:12</code>).</li>
+  <li>La <strong>categoría</strong> a la que pertenece (si no existe, antes hay que crearla — sección 6).</li>
+  <li>(Opcional) Una <strong>descripción</strong> corta.</li>
+  <li>(Opcional) La <strong>URL pública</strong> del vídeo en YouTube o Vimeo.</li>
+</ul>
+<h3>Paso a paso</h3>
+<ol>
+  <li>Menú izquierdo → <strong>Vídeos</strong> → botón <strong>«+» (Create)</strong> arriba a la derecha.</li>
+  <li>Rellena los campos:
+    <table class="field-table">
+      <thead><tr><th>Campo</th><th>Qué pones</th></tr></thead>
+      <tbody>
+        <tr><td>Título</td><td>Máximo 100 caracteres. Ej: «El Nuevo Parque de Benimaclet».</td></tr>
+        <tr><td>Slug (URL)</td><td>Se rellena solo. Pulsa <strong>Generate</strong> si está vacío. Solo edítalo si necesitas URL distinta del título; en ese caso minúsculas, sin acentos ni espacios, guiones en su lugar.</td></tr>
+        <tr><td>Imagen poster</td><td>Arrastra o pulsa Upload. Rellena el <strong>texto alternativo</strong> con una frase corta que describa la imagen.</td></tr>
+        <tr><td>Duración</td><td>Texto libre tipo <code>4:12</code> o <code>1:23:45</code>.</td></tr>
+        <tr><td>Categoría</td><td>Busca la existente. Si no aparece, créala primero (sección 6).</td></tr>
+        <tr><td>Descripción</td><td>Opcional. 2-4 líneas.</td></tr>
+        <tr><td>URL del vídeo</td><td>Opcional. De momento puede quedar vacío (reproductor real en fase 3).</td></tr>
+        <tr><td>Destacado</td><td>Si lo activas, aparece en lugares prominentes. Úsalo con criterio.</td></tr>
+        <tr><td>Sección en Home</td><td>Estrenos de Barrio · Documentales · Edu-Política · No mostrar.</td></tr>
+        <tr><td>Etiqueta especial</td><td>Opcional. Solo se ve si el vídeo está en Estrenos. Ej: <code>NUEVO</code>.</td></tr>
+        <tr><td>Fecha de publicación</td><td>Hoy por defecto. Cambia si publicas retroactivamente o lo programas a futuro.</td></tr>
+      </tbody>
+    </table>
+  </li>
+  <li>Arriba a la derecha, pulsa <strong>Publish</strong> (verde).</li>
+  <li>La web se actualiza en pocos minutos. Refresca pilarbernabe.es y compruébalo.</li>
+</ol>
+<blockquote><strong>Truco:</strong> mientras editas, lo que escribes se guarda automáticamente como <strong>borrador</strong> (draft). Hasta que pulses <em>Publish</em>, el cambio no es visible en la web. Eso te permite trabajar tranquila sin miedo a romper nada.</blockquote>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">04</span>Cómo publicar un episodio de podcast</h2>
+<p>Casi idéntico al vídeo, pero con sus campos propios.</p>
+<ol>
+  <li>Menú → <strong>Episodios de podcast</strong> → <strong>+</strong>.</li>
+  <li>Rellena los campos:
+    <table class="field-table">
+      <tbody>
+        <tr><td>Número de episodio</td><td>Entero positivo. Ej: <code>12</code>.</td></tr>
+        <tr><td>Título y slug</td><td>Igual que en vídeos.</td></tr>
+        <tr><td>Descripción</td><td>Máximo 280 caracteres (estilo redes sociales).</td></tr>
+        <tr><td>Fecha de publicación</td><td>Formato <code>YYYY-MM-DD</code>.</td></tr>
+        <tr><td>Duración</td><td>Texto libre. Ej: <code>45 min</code> o <code>1h 12 min</code>.</td></tr>
+        <tr><td>Imagen del episodio</td><td>Cuadrada idealmente (formato podcast).</td></tr>
+        <tr><td>URL del audio</td><td>Opcional. Enlace a Spotify, Apple Podcasts o iVoox.</td></tr>
+        <tr><td>Mostrar en el hero</td><td>Actívalo solo en <strong>el episodio más reciente</strong>.</td></tr>
+      </tbody>
+    </table>
+  </li>
+  <li><strong>Publish</strong>.</li>
+</ol>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">05</span>Cómo añadir un testimonio del Club</h2>
+<p>Aparecen en la sección <em>Club</em> de la web.</p>
+<ol>
+  <li>Menú → <strong>Testimonios (Club)</strong> → <strong>+</strong>.</li>
+  <li>Rellena:
+    <table class="field-table">
+      <tbody>
+        <tr><td>Nombre</td><td>Quién lo firma.</td></tr>
+        <tr><td>Barrio</td><td>Russafa, Benimaclet, Cabanyal…</td></tr>
+        <tr><td>Cita</td><td>Máximo 280 caracteres.</td></tr>
+        <tr><td>Orden</td><td>Número. Más bajo = aparece antes.</td></tr>
+        <tr><td>Mostrar en la web</td><td>Checkbox. Desactivar = retirar sin borrar.</td></tr>
+      </tbody>
+    </table>
+  </li>
+  <li><strong>Publish</strong>.</li>
+</ol>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">06</span>Cómo crear o editar una categoría</h2>
+<p>Las categorías sirven para agrupar vídeos (Barrio, Movilidad, Documentales…) y se muestran como «chips» coloreados en la web.</p>
+<ol>
+  <li>Menú → <strong>Categorías</strong> → <strong>+</strong> (o pulsa una existente para editarla).</li>
+  <li>Rellena:
+    <ul>
+      <li><strong>Nombre</strong> — corto, máx. 40 caracteres.</li>
+      <li><strong>Slug</strong> — se rellena solo.</li>
+      <li><strong>Color del chip</strong> — opcional. Código HEX (<code>#RRGGBB</code>). Si no lo pones, la web usa el color por defecto.</li>
+    </ul>
+  </li>
+  <li><strong>Publish</strong>.</li>
+</ol>
+<div class="callout callout-warn"><strong>Atención:</strong> si borras una categoría que algún vídeo está usando, esos vídeos se quedarán huérfanos y la web puede romperse. <strong>Antes de borrar una categoría</strong>, comprueba que ningún vídeo la usa.</div>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">07</span>Editar las páginas (Inicio, Club, Pitch, Podcast)</h2>
+<p>Cada página de la web tiene un <strong>documento único</strong> en el Studio. Cuando lo editas, cambias el texto y las imágenes que se ven en esa página.</p>
+<h3>Página: Inicio</h3>
+<p>Bloques editables:</p>
+<ul>
+  <li><strong>Hero principal</strong> — imagen, título, subtítulo, etiqueta (<code>EN DIRECTO</code>), botón principal y su destino, texto del contador.</li>
+  <li><strong>Sección «Estrenos de Barrio»</strong> — título y texto del enlace «ver más».</li>
+  <li><strong>Sección «Podcast»</strong> — idem.</li>
+  <li><strong>Sección «Documentales»</strong> — idem.</li>
+  <li><strong>Sección «Edu-Política»</strong> — idem.</li>
+</ul>
+<blockquote>El <strong>contenido</strong> de cada sección (los vídeos que aparecen) <strong>no se gestiona desde aquí</strong>. Se gestiona desde <em>Vídeos</em> + el campo «Sección en la página de inicio» de cada vídeo (ver sección 3).</blockquote>
+<h3>Página: Club, Pitch y Podcast</h3>
+<p>Cada una tiene su hero, su formulario, sus secciones. Los nombres de los campos son descriptivos (ej: «Título — línea 1», «Subtítulo», «Texto botón Escuchar») y guían lo que se está editando. Cambia el texto, pulsa <strong>Publish</strong> y refresca la web para validar.</p>
+<div class="callout callout-warn"><strong>Importante:</strong> en estas páginas no puedes borrar el documento. El botón de borrar no aparece a propósito. Si lo borraras, la página se quedaría sin contenido. Si necesitas vaciar un bloque, déjalo en blanco — no borres el documento entero.</div>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">08</span>Configuración general</h2>
+<p>Es donde se cambian las cosas transversales que aparecen en toda la web:</p>
+<ul>
+  <li><strong>Marca:</strong> nombre, color del acento (<code>#E30613</code>), letra acentuada (<code>É</code>), claim del footer.</li>
+  <li><strong>Redes sociales:</strong> añade, quita o desactiva enlaces a Twitter/X, Instagram, YouTube, TikTok, LinkedIn, Facebook. El checkbox <strong>Visible</strong> permite ocultar sin borrar.</li>
+  <li><strong>Footer:</strong> columnas de enlaces, copyright, línea inferior de atribución.</li>
+  <li><strong>Menú de navegación:</strong> enlaces del menú superior y botón CTA de la derecha (por defecto «Suscríbete» → <code>/club</code>).</li>
+</ul>
+<blockquote>Cambios en <em>Configuración general</em> afectan a <strong>todas las páginas a la vez</strong>. Revísalos con cuidado antes de pulsar Publish.</blockquote>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">09</span>Borradores, publicación y deshacer</h2>
+<p>Sanity Studio funciona con un sistema de <strong>borradores</strong>:</p>
+<ul>
+  <li>Mientras editas, los cambios se guardan solos como <strong>draft</strong>. El draft solo lo ves tú (y el resto del equipo). <strong>La web NO los enseña.</strong></li>
+  <li>Cuando pulsas <strong>Publish</strong> (botón verde arriba a la derecha), el draft pasa a ser la versión pública. La web se actualiza en pocos minutos.</li>
+  <li>Si te has equivocado: botón <strong>«⋯» (los tres puntos)</strong> junto a Publish → <strong>Discard changes</strong> descarta el borrador y vuelve a la versión publicada.</li>
+  <li>Para <strong>deshacer un cambio ya publicado</strong>, abre el documento → pestaña <strong>History</strong> (icono de reloj arriba a la derecha). Verás todas las versiones anteriores con quién y cuándo. Pulsa una versión antigua → <strong>Restore</strong>. Sanity guarda el historial indefinidamente.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">10</span>Buenas prácticas para imágenes</h2>
+<table class="field-table">
+  <tbody>
+    <tr><td>Formato</td><td>JPG o PNG. WebP también va, pero JPG es más universal.</td></tr>
+    <tr><td>Miniatura vídeo</td><td>16:9, mínimo 1280×720 px, idealmente 1920×1080.</td></tr>
+    <tr><td>Hero de páginas</td><td>Mínimo 1920 px de ancho. La web la recorta automáticamente.</td></tr>
+    <tr><td>Imagen podcast</td><td>Cuadrada, 1400×1400 px o más.</td></tr>
+    <tr><td>Peso máximo</td><td>4 MB. Si pesa más, comprime con Squoosh o TinyPNG.</td></tr>
+    <tr><td>Hotspot</td><td>Pulsa la imagen en el formulario para fijar el punto focal (qué parte conservar al recortar).</td></tr>
+    <tr><td>Texto alt</td><td>Rellénalo siempre. Una frase corta que describa lo que se ve.</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">11</span>Errores comunes y preguntas frecuentes</h2>
+<dl class="faq">
+<dt>No me deja publicar, dice que faltan campos obligatorios</dt>
+<dd>Los campos con asterisco (✱) son obligatorios. Sanity marca en rojo cuáles faltan. Suele ser el slug (pulsa «Generate») o el texto alternativo de la imagen.</dd>
+
+<dt>He publicado pero no se ve el cambio en la web</dt>
+<dd>Espera 2-3 minutos (la web cachea contenidos para ir rápida). Si pasados 5 minutos no se ve, refresca con <code>Ctrl+Shift+R</code> (Windows) o <code>Cmd+Shift+R</code> (Mac) para ignorar la caché del navegador. Si sigue sin verse, avisa a Javi.</dd>
+
+<dt>He borrado algo sin querer</dt>
+<dd>No pánico. Abre la papelera del Studio (icono arriba en la columna izquierda) — los documentos borrados se conservan 30 días. Pulsa el documento → <strong>Restore</strong>.</dd>
+
+<dt>He subido la imagen mal, ¿cómo la cambio?</dt>
+<dd>En el formulario, pulsa la imagen → <strong>«⋯»</strong> → <strong>Replace</strong>. Subes la nueva y todas las páginas que usaban esa imagen muestran la nueva.</dd>
+
+<dt>Aparece el mismo vídeo dos veces en la home</dt>
+<dd>Comprueba el campo «Sección en la página de inicio» del vídeo. Si lo cambias de carrusel sin guardar el anterior, puede quedar duplicado un momento mientras se actualiza la web. Espera 3 minutos y vuelve a comprobar.</dd>
+
+<dt>¿Puedo programar un vídeo para que se publique a futuro?</dt>
+<dd>Sí. En «Fecha de publicación» pon la fecha futura y pulsa Publish. El vídeo aparecerá automáticamente cuando llegue esa fecha (la web filtra por fecha).</dd>
+
+<dt>¿Puedo trabajar con otro miembro del equipo a la vez?</dt>
+<dd>Sí. Sanity Studio muestra en tiempo real qué documento está editando cada persona. Si dos personas editan el mismo documento a la vez, las dos veréis lo que escribe la otra. Para evitar pisarse, coordinaos por chat.</dd>
+</dl>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">12</span>Roles y permisos</h2>
+<ul>
+  <li><strong>Editor</strong> (la mayoría del equipo): puede crear, editar y publicar todo el contenido. No puede invitar a más miembros ni tocar la configuración técnica.</li>
+  <li><strong>Administrator</strong> (Javi y, opcionalmente, una persona de confianza del equipo): además, gestiona miembros, dominios y configuración técnica.</li>
+</ul>
+<p>Si necesitas que alguien más entre, escríbele a Javi con el email de esa persona.</p>
+</section>
+
+<section>
+<h2 class="section-title"><span class="num">13</span>Contacto y soporte</h2>
+<table class="field-table">
+  <tbody>
+    <tr><td>Dudas operativas</td><td>Cómo publicar, qué campo es qué. Tu primer recurso es este manual.</td></tr>
+    <tr><td>Dudas no resueltas</td><td>Javi Cebrián — <a href="mailto:javi.cebrian.renovell@gmail.com">javi.cebrian.renovell@gmail.com</a></td></tr>
+    <tr><td>Caída de la web o del Studio</td><td>Avisa a Javi por el canal más rápido que tengas.</td></tr>
+  </tbody>
+</table>
+</section>
+
+<div class="lastpage">
+  <p>Manual editorial · v1.0 · Mayo 2026</p>
+  <p>Vive en <code>docs/MANUAL-EDITORIAL.md</code> y se actualiza con cada cambio del Studio.</p>
+  <p style="margin-top:6mm;"><strong>LA BERNAB<span style="color:var(--brand-red);">É</span> PRODUCCIONS</strong> — Una plataforma audiovisual de proximidad para València.</p>
+</div>
+
+</div>
+</body>
+</html>

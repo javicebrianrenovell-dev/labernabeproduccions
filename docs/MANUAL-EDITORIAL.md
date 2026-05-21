@@ -3,7 +3,7 @@
 Guía para el equipo que va a llevar el día a día de los contenidos de **pilarbernabe.es**.
 Pensada para que cualquier persona del equipo, sin conocimientos técnicos, pueda publicar un vídeo, un episodio de podcast o cambiar el texto de la home en 5 minutos.
 
-> Si tienes dudas en mitad de algo, no toques más y avisa a Javi (javi.cebrian@grupimedes.com). Es más rápido que deshacer un cambio.
+> Si tienes dudas en mitad de algo, no toques más y avisa a Javi (javi.cebrian.renovell@gmail.com). Es más rápido que deshacer un cambio.
 
 ---
 
@@ -225,7 +225,7 @@ Si necesitas que alguien más entre, escríbele a Javi con el email de esa perso
 ## 13. Contacto y soporte
 
 - **Dudas operativas (cómo publicar, qué campo es qué)**: tu primer recurso es este manual.
-- **Dudas no resueltas o problemas con la web**: Javi Cebrián — `javi.cebrian@grupimedes.com`.
+- **Dudas no resueltas o problemas con la web**: Javi Cebrián — `javi.cebrian.renovell@gmail.com`.
 - **Caída de la web o del Studio (cosa rara)**: avisa a Javi por el canal más rápido que tengas.
 
 ---
