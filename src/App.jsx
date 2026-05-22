@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import ComingSoon, { useComingSoonGate } from './components/ComingSoon'
 import Home from './pages/Home'
 import Player from './pages/Player'
 import Club from './pages/Club'
@@ -19,6 +20,9 @@ function Layout({ children, noFooter }) {
 }
 
 export default function App() {
+  const { showComingSoon } = useComingSoonGate()
+  if (showComingSoon) return <ComingSoon />
+
   return (
     <BrowserRouter>
       <Routes>
