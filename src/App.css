@@ -87,11 +87,25 @@ img { display: block; max-width: 100%; }
 .carousel { display: flex; gap: var(--space-4); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: var(--space-2); }
 .carousel::-webkit-scrollbar { display: none; }
 
-/* ═══ VIDEO CARD ═══ */
-.card { flex: 0 0 280px; scroll-snap-align: start; border-radius: var(--radius); overflow: hidden; background: var(--surface-container-high); transition: all 0.3s var(--ease-out); cursor: pointer; }
+/* ═══ FORMATO DE CARRUSEL ═══ */
+/* La geometría de la tarjeta (proporción + ancho) es un dato del CMS: el equipo la
+   elige por sección desde el Studio ("Página: Inicio" → Formato de las miniaturas).
+   Viaja como custom property declarada en el carrusel, nunca como estilo en línea,
+   para que las media queries de abajo puedan seguir ganando. */
+.carousel             { --card-ar: 16/9; --card-w: 280px; }
+.carousel--horizontal { --card-ar: 16/9; --card-w: 280px; }
+.carousel--vertical   { --card-ar: 9/16; --card-w: 180px; }
+.carousel--cuadrado   { --card-ar: 1/1;  --card-w: 220px; }
+.carousel--panoramico { --card-ar: 21/9; --card-w: 400px; }
+
+/* ═══ CARD ═══ */
+/* Base común a las tres variantes de la home (estreno / documental / edu) y al grid
+   "Contenido Relacionado" del reproductor, que usa .card fuera de un carrusel — de
+   ahí los valores de reserva de var(): allí no hay --card-w ni --card-ar. */
+.card { flex: 0 0 var(--card-w, 280px); scroll-snap-align: start; border-radius: var(--radius); overflow: hidden; background: var(--surface-container-high); transition: all 0.3s var(--ease-out); cursor: pointer; }
 .card a { color: inherit; }
 .card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-.card__thumb { position: relative; aspect-ratio: 16/9; overflow: hidden; }
+.card__thumb { position: relative; aspect-ratio: var(--card-ar, 16/9); overflow: hidden; }
 .card__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s var(--ease-out); }
 .card:hover .card__thumb img { transform: scale(1.05); }
 .card__play-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.3s; }
@@ -102,6 +116,27 @@ img { display: block; max-width: 100%; }
 .card__info { padding: var(--space-3) var(--space-4); }
 .card__title { font-size: var(--body-md); font-weight: 600; color: var(--white); margin-bottom: var(--space-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card__meta { font-size: var(--label-sm); color: var(--on-surface-muted); }
+.card__desc { font-size: var(--body-sm); color: var(--on-surface-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Variante "documental" — antes .wide-card. Título grande que envuelve, más aire
+   interior y descripción de dos líneas. */
+.card--documental { transition: all 0.3s; }
+.card--documental .card__thumb img { transition: transform 0.4s; }
+.card--documental .card__info { padding: var(--space-4); }
+.card--documental .card__title { font-size: var(--body-lg); font-weight: 700; white-space: normal; text-overflow: clip; }
+
+/* Variante "edu" — antes .square-card. Título pequeño que envuelve, sin descripción. */
+.card--edu { transition: all 0.3s; }
+.card--edu .card__thumb img { transition: transform 0.4s; }
+.card--edu .card__title { font-size: var(--body-sm); margin-bottom: 0; white-space: normal; text-overflow: clip; }
+.card--edu .card__meta { margin-top: var(--space-1); }
+
+/* En vertical el título no cabe en una línea (a 180px entran ~18 caracteres):
+   se deja envolver hasta dos líneas en lugar de cortarlo con puntos suspensivos. */
+.carousel--vertical .card__title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: clip; }
+/* Una descripción de dos líneas bajo una miniatura de 320px dispara el alto de la
+   fila y se lee mal a ese ancho. */
+.carousel--vertical .card__desc { display: none; }
 
 /* ═══ PODCAST CARD (UPDATED WITH IMAGES) ═══ */
 .podcast-card { flex: 0 0 320px; scroll-snap-align: start; display: flex; align-items: center; gap: var(--space-4); background: var(--surface-container-high); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: all 0.3s var(--ease-out); }
@@ -124,27 +159,6 @@ img { display: block; max-width: 100%; }
 .podcast-card__ep { font-size: var(--label-sm); color: var(--primary-soft); font-weight: 600; text-transform: uppercase; }
 .podcast-card__title { font-size: var(--body-md); font-weight: 600; color: var(--white); margin: var(--space-1) 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .podcast-card__duration { font-size: var(--label-sm); color: var(--on-surface-muted); }
-
-/* ═══ WIDE CARD ═══ */
-.wide-card { flex: 0 0 400px; scroll-snap-align: start; border-radius: var(--radius); overflow: hidden; background: var(--surface-container-high); cursor: pointer; transition: all 0.3s; }
-.wide-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-.wide-card__thumb { position: relative; aspect-ratio: 21/9; overflow: hidden; }
-.wide-card__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-.wide-card:hover .wide-card__thumb img { transform: scale(1.05); }
-.wide-card__duration { position: absolute; bottom: var(--space-2); right: var(--space-2); background: rgba(0,0,0,0.8); color: var(--white); font-size: var(--label-sm); font-weight: 600; padding: 2px var(--space-2); border-radius: 4px; }
-.wide-card__info { padding: var(--space-4); }
-.wide-card__title { font-size: var(--body-lg); font-weight: 700; color: var(--white); margin-bottom: var(--space-1); }
-.wide-card__desc { font-size: var(--body-sm); color: var(--on-surface-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-
-/* ═══ SQUARE CARD ═══ */
-.square-card { flex: 0 0 220px; scroll-snap-align: start; border-radius: var(--radius); overflow: hidden; background: var(--surface-container-high); cursor: pointer; transition: all 0.3s; }
-.square-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-.square-card__thumb { position: relative; aspect-ratio: 1; overflow: hidden; }
-.square-card__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-.square-card:hover .square-card__thumb img { transform: scale(1.05); }
-.square-card__info { padding: var(--space-3) var(--space-4); }
-.square-card__title { font-size: var(--body-sm); font-weight: 600; color: var(--white); }
-.square-card__meta { font-size: var(--label-sm); color: var(--on-surface-muted); margin-top: var(--space-1); }
 
 /* ═══ FOOTER ═══ */
 .footer { border-top: 2px solid var(--primary); background: var(--surface-dim); padding: var(--space-16) var(--space-10) var(--space-8); }
@@ -407,4 +421,7 @@ img { display: block; max-width: 100%; }
   .testimonials-grid { grid-template-columns: 1fr; }
   .pitch-layout { padding: 0 var(--space-4); }
   .player-content { padding: var(--space-4); }
+  /* Solo el vertical: es el único formato nuevo. Los otros tres no tienen ajuste
+     móvil hoy y tocarlos cambiaría la web actual. */
+  .carousel--vertical { --card-w: 150px; }
 }
