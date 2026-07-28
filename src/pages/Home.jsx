@@ -57,25 +57,48 @@ const FALLBACK_EDUPOLITICA = [
   { _id: 'ed5', title: 'Servicios Municipales 101', duration: '9 min', img: '/images/podcast3.png' },
 ]
 
+// ─── Formatos de carrusel ──────────────────────────────────────────────────
+
+// Recorte que se le pide a Sanity para cada formato. Debe coincidir con la
+// proporción que el CSS le da a la miniatura (--card-ar en App.css): si no
+// coinciden, el object-fit del navegador vuelve a recortar encima y la imagen
+// sale ampliada. Los tamaños cubren pantallas de alta densidad sobre el ancho
+// de tarjeta de cada formato.
+const FORMATOS = {
+  vertical:   { crop: { w:  540, h:  960 } }, // 9:16
+  cuadrado:   { crop: { w:  640, h:  640 } }, // 1:1
+  horizontal: { crop: { w:  800, h:  450 } }, // 16:9
+  panoramico: { crop: { w: 1000, h:  429 } }, // 21:9
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function normalizeVideo(v) {
   if (!v) return null
   const isFromSanity = !!v.titulo
   if (!isFromSanity) return v
-  let img = '/images/hero.png'
-  if (v.poster) {
-    try {
-      img = urlFor(v.poster).width(800).height(450).fit('crop').auto('format').url()
-    } catch (e) { /* ignore */ }
-  }
   return {
     _id: v._id,
     title: v.titulo,
     duration: v.duracion,
     badge: v.badgeHome,
     desc: v.descripcion,
-    img,
+    // Se guarda la imagen sin procesar: la URL con su recorte se calcula al
+    // pintar, cuando ya se conoce el formato de la sección. El formato llega de
+    // fetchPaginaHome(), que es una petición independiente de la de los vídeos y
+    // puede resolverse después.
+    poster: v.poster,
+  }
+}
+
+function posterUrl(item, formato) {
+  if (item.img) return item.img // fallbacks locales, ya traen ruta estática
+  if (!item.poster) return '/images/hero.png'
+  const { w, h } = (FORMATOS[formato] || FORMATOS.horizontal).crop
+  try {
+    return urlFor(item.poster).width(w).height(h).fit('crop').auto('format').url()
+  } catch {
+    return '/images/hero.png'
   }
 }
 
@@ -104,7 +127,7 @@ function normalizeEpisodio(e, i) {
 // Una sola tarjeta para los tres carruseles de vídeo. La geometría (proporción y
 // ancho) la decide el CSS a partir del formato del carrusel; aquí solo se elige qué
 // campos se pintan.
-function MediaCard({ item, index, variant, sectionLabel }) {
+function MediaCard({ item, index, variant, formato, sectionLabel }) {
   const esEstreno = variant === 'estreno'
   const esDocumental = variant === 'documental'
   const esEdu = variant === 'edu'
@@ -116,7 +139,7 @@ function MediaCard({ item, index, variant, sectionLabel }) {
   const cuerpo = (
     <>
       <div className="card__thumb">
-        <img src={item.img} alt={item.title} />
+        <img src={posterUrl(item, formato)} alt={item.title} />
         {esEstreno && <div className="card__play-overlay"><PlayIcon /></div>}
         {esEstreno && item.badge && <span className="card__badge">{item.badge}</span>}
         {!esEdu && <span className="card__duration">{item.duration}</span>}
@@ -283,7 +306,7 @@ export default function Home() {
         </div>
         <div className="carousel">
           {estrenos.map((item, i) => (
-            <MediaCard key={item._id} item={item} index={i} variant="estreno" sectionLabel="Estrenos de Barrio" />
+            <MediaCard key={item._id} item={item} index={i} variant="estreno" formato="horizontal" sectionLabel="Estrenos de Barrio" />
           ))}
         </div>
       </section>
@@ -304,7 +327,7 @@ export default function Home() {
           <a href="#">{secciones.seccionDocumentales.verMas}</a>
         </div>
         <div className="carousel">
-          {documentales.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="documental" />)}
+          {documentales.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="documental" formato="panoramico" />)}
         </div>
       </section>
 
@@ -314,7 +337,7 @@ export default function Home() {
           <a href="#">{secciones.seccionEdupolitica.verMas}</a>
         </div>
         <div className="carousel">
-          {edupolitica.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="edu" />)}
+          {edupolitica.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="edu" formato="cuadrado" />)}
         </div>
       </section>
     </>
