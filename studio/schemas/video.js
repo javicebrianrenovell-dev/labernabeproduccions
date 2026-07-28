@@ -21,7 +21,13 @@ export default {
       name: 'poster',
       title: 'Imagen poster (miniatura)',
       type: 'image',
-      description: 'Imagen 16:9 recomendada (mín. 1280×720 px, máx. 4 MB).',
+      description:
+        'Súbela con la misma proporción que tenga configurada su sección en ' +
+        '"Página: Inicio" → Formato de las miniaturas. Vertical 9:16: mín. 1080×1920 px. ' +
+        'Cuadrado: mín. 1080×1080 px. Horizontal 16:9 o Panorámico: mín. 1280×720 px. ' +
+        'Máx. 4 MB. Sea cual sea el formato, pulsa sobre la imagen y coloca el punto de ' +
+        'enfoque sobre la cara o el elemento principal: es lo que la web usa para ' +
+        'recortar sin cortar lo importante.',
       options: {hotspot: true},
       fields: [
         {
@@ -73,7 +79,9 @@ export default {
       title: 'Sección en la página de inicio',
       type: 'string',
       description:
-        'Determina en qué carrusel de la home aparece. "Estrenos de Barrio", "Documentales" o "Edu-Política".',
+        'Determina en qué carrusel de la home aparece. "Estrenos de Barrio", "Documentales" o "Edu-Política". ' +
+        'El formato de las miniaturas (vertical, cuadrado, horizontal…) no se elige aquí ' +
+        'sino en "Página: Inicio", y se aplica a todo el carrusel de esa sección.',
       options: {
         list: [
           {title: 'Estrenos de Barrio', value: 'estrenos'},

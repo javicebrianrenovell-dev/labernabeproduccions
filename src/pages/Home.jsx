@@ -71,6 +71,30 @@ const FORMATOS = {
   panoramico: { crop: { w: 1000, h:  429 } }, // 21:9
 }
 
+// Formato de cada carrusel mientras el equipo no elija uno en el Studio.
+// Vive aquí y no como initialValue del schema porque el documento "Página: Inicio"
+// ya existe en producción, y en Sanity el initialValue solo se aplica al crear un
+// documento nuevo: los campos añadidos después llegan vacíos.
+const FORMATO_POR_DEFECTO = {
+  seccionEstrenos: 'vertical',
+  seccionDocumentales: 'panoramico',
+  seccionEdupolitica: 'vertical',
+}
+
+// El valor que viene del CMS nunca entra en el CSS: solo sirve para elegir un nombre
+// de clase de esta lista. Un valor inesperado cae al formato por defecto de su
+// sección en lugar de producir un aspect-ratio inválido que rompería la maqueta.
+function formatoDe(secciones, key) {
+  if (import.meta.env.DEV) {
+    // Atajo de desarrollo para revisar los cuatro formatos sin tocar Sanity:
+    // localhost:5173/?formato=vertical. Vite lo elimina del build de producción.
+    const forzado = new URLSearchParams(window.location.search).get('formato')
+    if (FORMATOS[forzado]) return forzado
+  }
+  const elegido = secciones?.[key]?.formato
+  return FORMATOS[elegido] ? elegido : FORMATO_POR_DEFECTO[key]
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function normalizeVideo(v) {
@@ -277,6 +301,10 @@ export default function Home() {
 
   const pad = (n) => String(n).padStart(2, '0')
 
+  const fmtEstrenos = formatoDe(secciones, 'seccionEstrenos')
+  const fmtDocumentales = formatoDe(secciones, 'seccionDocumentales')
+  const fmtEdupolitica = formatoDe(secciones, 'seccionEdupolitica')
+
   return (
     <>
       <section className="hero" id="inicio">
@@ -304,9 +332,9 @@ export default function Home() {
           <h2>{secciones.seccionEstrenos.titulo}</h2>
           <Link to="/reproductor">{secciones.seccionEstrenos.verMas}</Link>
         </div>
-        <div className="carousel">
+        <div className={`carousel carousel--${fmtEstrenos}`}>
           {estrenos.map((item, i) => (
-            <MediaCard key={item._id} item={item} index={i} variant="estreno" formato="horizontal" sectionLabel="Estrenos de Barrio" />
+            <MediaCard key={item._id} item={item} index={i} variant="estreno" formato={fmtEstrenos} sectionLabel="Estrenos de Barrio" />
           ))}
         </div>
       </section>
@@ -326,8 +354,8 @@ export default function Home() {
           <h2>{secciones.seccionDocumentales.titulo}</h2>
           <a href="#">{secciones.seccionDocumentales.verMas}</a>
         </div>
-        <div className="carousel">
-          {documentales.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="documental" formato="panoramico" />)}
+        <div className={`carousel carousel--${fmtDocumentales}`}>
+          {documentales.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="documental" formato={fmtDocumentales} />)}
         </div>
       </section>
 
@@ -336,8 +364,8 @@ export default function Home() {
           <h2>{secciones.seccionEdupolitica.titulo}</h2>
           <a href="#">{secciones.seccionEdupolitica.verMas}</a>
         </div>
-        <div className="carousel">
-          {edupolitica.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="edu" formato="cuadrado" />)}
+        <div className={`carousel carousel--${fmtEdupolitica}`}>
+          {edupolitica.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="edu" formato={fmtEdupolitica} />)}
         </div>
       </section>
     </>
