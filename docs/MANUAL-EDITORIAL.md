@@ -50,7 +50,7 @@ Es la operación más frecuente. Se hace en menos de 3 minutos cuando tienes el 
 ### Antes de empezar, ten a mano
 
 - El **título** del vídeo.
-- Una **miniatura** en formato 16:9 (recomendado mínimo 1280×720 px, máximo 4 MB). Sirve JPG o PNG.
+- Una **miniatura** con la misma proporción que tenga configurada la sección donde va a ir (ver sección 7). Si la sección está en *Vertical 9:16*, súbela vertical (mínimo 1080×1920 px); si está en *Horizontal* o *Panorámico*, apaisada (mínimo 1280×720 px). Máximo 4 MB. Sirve JPG o PNG.
 - La **duración** del vídeo (ej: `4:12`).
 - La **categoría** a la que pertenece (si no existe, antes hay que crearla — ver sección 6).
 - (Opcional) Una **descripción** corta.
@@ -62,7 +62,7 @@ Es la operación más frecuente. Se hace en menos de 3 minutos cuando tienes el 
 2. Rellena los campos:
    - **Título** — máximo 100 caracteres. Ej: *"El Nuevo Parque de Benimaclet"*.
    - **Slug (URL)** — se rellena solo a partir del título. Pulsa **"Generate"** si está vacío. Solo edítalo a mano si necesitas una URL distinta del título; en ese caso usa solo minúsculas, sin acentos ni espacios (guiones en su lugar).
-   - **Imagen poster (miniatura)** — arrastra la imagen o pulsa "Upload". Importante: rellena el campo **"Texto alternativo"** con una frase corta que describa la imagen (es lo que leen los lectores de pantalla y Google).
+   - **Imagen poster (miniatura)** — arrastra la imagen o pulsa "Upload". Súbela en la proporción de su sección (ver sección 7). Después **pulsa sobre la imagen** y arrastra el círculo del *punto de enfoque* hasta la cara o el elemento principal: es lo que la web usa para recortar sin cortar lo importante. Importante: rellena también el campo **"Texto alternativo"** con una frase corta que describa la imagen (es lo que leen los lectores de pantalla y Google).
    - **Duración** — texto libre tipo `4:12` o `1:23:45`.
    - **Categoría** — pulsa, busca la categoría existente. Si no aparece, créala primero (sección 6) y vuelve.
    - **Descripción** — opcional. 2-4 líneas.
@@ -136,12 +136,40 @@ Cada página de la web tiene un **documento único** en el Studio. Cuando lo edi
 
 Bloques editables:
 - **Hero principal** — la imagen grande de arriba, el título, el subtítulo, el texto de la etiqueta (`EN DIRECTO`), el botón principal y su destino, el texto del contador (`Próximo estreno en`).
-- **Sección "Estrenos de Barrio"** — título y texto del enlace "ver más".
-- **Sección "Podcast"** — idem.
-- **Sección "Documentales"** — idem.
+- **Sección "Estrenos de Barrio"** — título, texto del enlace "ver más" y **formato de las miniaturas**.
+- **Sección "Podcast"** — título y texto del enlace "ver más".
+- **Sección "Documentales"** — título, texto del enlace "ver más" y **formato de las miniaturas**.
 - **Sección "Edu-Política"** — idem.
 
 > El **contenido** de cada sección (los vídeos que aparecen) **no se gestiona desde aquí**. Se gestiona desde *Vídeos* + el campo "Sección en la página de inicio" de cada vídeo (ver sección 3).
+
+#### Cambiar el formato de un carrusel (vertical, cuadrado, horizontal)
+
+Cada sección de vídeo tiene un campo **"Formato de las miniaturas"** con cuatro opciones. Define la forma de las tarjetas de **todo el carrusel** de esa sección:
+
+| Opción | Para qué sirve | Miniatura que hay que subir |
+|---|---|---|
+| **Vertical 9:16 (redes sociales)** | Material de Reels, TikTok y Shorts | 1080×1920 px |
+| **Cuadrado 1:1** | Piezas cuadradas de feed | 1080×1080 px |
+| **Horizontal 16:9** | Vídeo apaisado convencional | 1280×720 px |
+| **Panorámico 21:9** | Documentales, look de cine | 1280×549 px o cualquier apaisada |
+
+Cómo se cambia:
+
+1. Menú izquierdo → **Página: Inicio**.
+2. Baja hasta la sección que quieras (ej: *Sección "Estrenos de Barrio"*).
+3. Marca la opción en **Formato de las miniaturas**.
+4. **Publish**. Al cabo de un minuto, refresca pilarbernabe.es.
+
+> **Importante:** el formato es de la sección, no del vídeo. Todos los vídeos de ese carrusel adoptan la misma forma — es lo que hace que la fila se vea ordenada. Si mezclas material vertical y apaisado en la misma sección, unos u otros quedarán recortados.
+
+> **Si dejas la opción sin marcar** se usa el formato de partida: *Estrenos de Barrio* y *Edu-Política* en vertical, *Documentales de Gestión* en panorámico.
+
+> **Al pasar una sección a vertical o cuadrado**, repasa los vídeos que ya tenía: si sus miniaturas son apaisadas, se recortarán por los lados. O subes miniaturas nuevas en la proporción correcta, o al menos colocas el punto de enfoque de cada una (sección 3).
+
+> **La sección "Podcast" no tiene esta opción.** Sus tarjetas son una fila con la carátula al lado del texto, no una miniatura suelta, y cualquier proporción vertical rompería la maqueta.
+
+> **¿Te has arrepentido?** Vacía la opción o vuelve a marcar la anterior y pulsa Publish. Se deshace igual de rápido. No necesitas avisar a nadie.
 
 ### Página: Club, Pitch y Podcast
 
@@ -179,11 +207,15 @@ Sanity Studio funciona con un sistema de **borradores**:
 
 - **Formato**: JPG o PNG. WebP también va, pero JPG es más universal.
 - **Tamaño**:
-  - Miniaturas de vídeo: 16:9, mínimo 1280×720 px, idealmente 1920×1080.
+  - Miniaturas de vídeo: en la proporción que tenga configurada su sección (sección 7).
+    - Vertical 9:16 → mínimo 1080×1920 px.
+    - Cuadrado 1:1 → mínimo 1080×1080 px.
+    - Horizontal 16:9 → mínimo 1280×720 px, idealmente 1920×1080.
+    - Panorámico 21:9 → vale cualquier apaisada de 1280 px de ancho o más; la web recorta arriba y abajo.
   - Hero de páginas: lo más grande que tengas (mínimo 1920 px de ancho). La web la recorta automáticamente.
   - Imagen de podcast: cuadrada, 1400×1400 px o más.
 - **Peso**: por debajo de 4 MB. Si pesa más, comprime con [Squoosh](https://squoosh.app/) o [TinyPNG](https://tinypng.com/) antes de subirla.
-- **Hotspot**: cuando subes una imagen, puedes pulsar sobre ella en el formulario para fijar el "punto focal". Si la imagen se recorta en pantallas pequeñas, el hotspot indica qué parte conservar.
+- **Punto de enfoque (hotspot)**: cuando subes una imagen, pulsa sobre ella en el formulario y arrastra el círculo hasta la cara o el elemento principal. Es lo que la web usa para decidir qué parte conservar al recortar. Importa sobre todo cuando la proporción de la imagen no coincide con la de su sección: sin punto de enfoque, el recorte va al centro y se lleva por delante lo que haya en los bordes.
 - **Texto alternativo (alt)**: rellénalo siempre. Una frase corta que describa lo que se ve. Es lo que leen los lectores de pantalla y lo que indexa Google.
 
 ---
@@ -194,7 +226,10 @@ Sanity Studio funciona con un sistema de **borradores**:
 Los campos con asterisco (✱) son obligatorios. Sanity te marca en rojo cuáles faltan. Suele ser el slug (pulsa "Generate") o el texto alternativo de la imagen.
 
 **"He publicado pero no se ve el cambio en la web"**
-Espera 2-3 minutos. La web cachea contenidos para ir rápida. Si pasados 5 minutos no se ve, refresca con `Ctrl+Shift+R` (Windows) o `Cmd+Shift+R` (Mac) para ignorar la caché del navegador. Si sigue sin verse, avisa a Javi.
+Espera alrededor de un minuto. La web cachea contenidos para ir rápida. Si pasados 5 minutos no se ve, refresca con `Ctrl+Shift+R` (Windows) o `Cmd+Shift+R` (Mac) para ignorar la caché del navegador. Si sigue sin verse, avisa a Javi.
+
+**"He cambiado el formato de una sección y los vídeos salen recortados"**
+Es lo esperado si las miniaturas que ya había son de otra proporción: al pasar una sección a vertical, una miniatura apaisada se recorta por los lados y se queda con menos de un tercio de la imagen original. Tienes dos salidas: subir miniaturas nuevas en la proporción correcta (sección 10), o abrir cada vídeo y colocarle el punto de enfoque (sección 3), que al menos manda qué parte se conserva.
 
 **"He borrado algo sin querer"**
 No pánico. Abre la papelera del Studio (en la columna izquierda hay un icono de papelera arriba) — los documentos borrados se conservan 30 días. Pulsa el documento → **"Restore"**.

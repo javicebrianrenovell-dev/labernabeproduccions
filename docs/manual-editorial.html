@@ -351,7 +351,7 @@
   </div>
 
   <div class="cover-title">
-    <div class="cover-eyebrow">Documento interno · v1.0</div>
+    <div class="cover-eyebrow">Documento interno · v1.1</div>
     <h1>Manual<br/>editorial<span class="red">.</span></h1>
     <p class="cover-subtitle">
       Guía operativa para que el equipo lleve el día a día de los contenidos de
@@ -365,7 +365,7 @@
       <div>Pilar Bernabé — Candidata por València</div>
     </div>
     <div class="right">
-      Mayo 2026<br/>
+      Julio 2026<br/>
       Edición consultoría — Imedes
     </div>
   </div>
@@ -441,7 +441,7 @@
 <h3>Antes de empezar, ten a mano</h3>
 <ul>
   <li>El <strong>título</strong> del vídeo.</li>
-  <li>Una <strong>miniatura</strong> en formato 16:9 (mínimo 1280×720 px, máximo 4 MB). JPG o PNG.</li>
+  <li>Una <strong>miniatura</strong> con la misma proporción que tenga configurada la sección donde va a ir (sección 7). Vertical 9:16 → mínimo 1080×1920 px; horizontal o panorámico → mínimo 1280×720 px. Máximo 4 MB. JPG o PNG.</li>
   <li>La <strong>duración</strong> del vídeo (ej: <code>4:12</code>).</li>
   <li>La <strong>categoría</strong> a la que pertenece (si no existe, antes hay que crearla — sección 6).</li>
   <li>(Opcional) Una <strong>descripción</strong> corta.</li>
@@ -456,7 +456,7 @@
       <tbody>
         <tr><td>Título</td><td>Máximo 100 caracteres. Ej: «El Nuevo Parque de Benimaclet».</td></tr>
         <tr><td>Slug (URL)</td><td>Se rellena solo. Pulsa <strong>Generate</strong> si está vacío. Solo edítalo si necesitas URL distinta del título; en ese caso minúsculas, sin acentos ni espacios, guiones en su lugar.</td></tr>
-        <tr><td>Imagen poster</td><td>Arrastra o pulsa Upload. Rellena el <strong>texto alternativo</strong> con una frase corta que describa la imagen.</td></tr>
+        <tr><td>Imagen poster</td><td>Arrastra o pulsa Upload, en la proporción de su sección (sección 7). Después <strong>pulsa sobre la imagen</strong> y arrastra el punto de enfoque hasta la cara o el elemento principal. Rellena también el <strong>texto alternativo</strong> con una frase corta que describa la imagen.</td></tr>
         <tr><td>Duración</td><td>Texto libre tipo <code>4:12</code> o <code>1:23:45</code>.</td></tr>
         <tr><td>Categoría</td><td>Busca la existente. Si no aparece, créala primero (sección 6).</td></tr>
         <tr><td>Descripción</td><td>Opcional. 2-4 líneas.</td></tr>
@@ -541,12 +541,37 @@
 <p>Bloques editables:</p>
 <ul>
   <li><strong>Hero principal</strong> — imagen, título, subtítulo, etiqueta (<code>EN DIRECTO</code>), botón principal y su destino, texto del contador.</li>
-  <li><strong>Sección «Estrenos de Barrio»</strong> — título y texto del enlace «ver más».</li>
-  <li><strong>Sección «Podcast»</strong> — idem.</li>
-  <li><strong>Sección «Documentales»</strong> — idem.</li>
+  <li><strong>Sección «Estrenos de Barrio»</strong> — título, texto del enlace «ver más» y <strong>formato de las miniaturas</strong>.</li>
+  <li><strong>Sección «Podcast»</strong> — título y texto del enlace «ver más».</li>
+  <li><strong>Sección «Documentales»</strong> — título, texto del enlace «ver más» y <strong>formato de las miniaturas</strong>.</li>
   <li><strong>Sección «Edu-Política»</strong> — idem.</li>
 </ul>
 <blockquote>El <strong>contenido</strong> de cada sección (los vídeos que aparecen) <strong>no se gestiona desde aquí</strong>. Se gestiona desde <em>Vídeos</em> + el campo «Sección en la página de inicio» de cada vídeo (ver sección 3).</blockquote>
+
+<h3>Cambiar el formato de un carrusel (vertical, cuadrado, horizontal)</h3>
+<p>Cada sección de vídeo tiene un campo <strong>«Formato de las miniaturas»</strong> con cuatro opciones. Define la forma de las tarjetas de <strong>todo el carrusel</strong> de esa sección:</p>
+<table class="field-table">
+  <thead><tr><th>Opción</th><th>Para qué sirve · qué miniatura subir</th></tr></thead>
+  <tbody>
+    <tr><td>Vertical 9:16</td><td>Material de Reels, TikTok y Shorts. Miniatura de 1080×1920 px.</td></tr>
+    <tr><td>Cuadrado 1:1</td><td>Piezas cuadradas de feed. Miniatura de 1080×1080 px.</td></tr>
+    <tr><td>Horizontal 16:9</td><td>Vídeo apaisado convencional. Miniatura de 1280×720 px.</td></tr>
+    <tr><td>Panorámico 21:9</td><td>Documentales, look de cine. Cualquier apaisada de 1280 px de ancho o más.</td></tr>
+  </tbody>
+</table>
+<p>Cómo se cambia:</p>
+<ol>
+  <li>Menú izquierdo → <strong>Página: Inicio</strong>.</li>
+  <li>Baja hasta la sección que quieras (ej: <em>Sección «Estrenos de Barrio»</em>).</li>
+  <li>Marca la opción en <strong>Formato de las miniaturas</strong>.</li>
+  <li><strong>Publish</strong>. Al cabo de un minuto, refresca pilarbernabe.es.</li>
+</ol>
+<blockquote>El formato es de la <strong>sección</strong>, no del vídeo. Todos los vídeos de ese carrusel adoptan la misma forma — es lo que hace que la fila se vea ordenada. Si mezclas material vertical y apaisado en la misma sección, unos u otros quedarán recortados.</blockquote>
+<blockquote>Si dejas la opción <strong>sin marcar</strong> se usa el formato de partida: <em>Estrenos de Barrio</em> y <em>Edu-Política</em> en vertical, <em>Documentales de Gestión</em> en panorámico.</blockquote>
+<div class="callout callout-warn"><strong>Al pasar una sección a vertical o cuadrado</strong>, repasa los vídeos que ya tenía: si sus miniaturas son apaisadas, se recortarán por los lados. O subes miniaturas nuevas en la proporción correcta, o al menos colocas el punto de enfoque de cada una (sección 3).</div>
+<blockquote>La sección <strong>«Podcast» no tiene esta opción</strong>. Sus tarjetas son una fila con la carátula al lado del texto, no una miniatura suelta, y cualquier proporción vertical rompería la maqueta.</blockquote>
+<blockquote><strong>¿Te has arrepentido?</strong> Vacía la opción o vuelve a marcar la anterior y pulsa Publish. Se deshace igual de rápido. No necesitas avisar a nadie.</blockquote>
+
 <h3>Página: Club, Pitch y Podcast</h3>
 <p>Cada una tiene su hero, su formulario, sus secciones. Los nombres de los campos son descriptivos (ej: «Título — línea 1», «Subtítulo», «Texto botón Escuchar») y guían lo que se está editando. Cambia el texto, pulsa <strong>Publish</strong> y refresca la web para validar.</p>
 <div class="callout callout-warn"><strong>Importante:</strong> en estas páginas no puedes borrar el documento. El botón de borrar no aparece a propósito. Si lo borraras, la página se quedaría sin contenido. Si necesitas vaciar un bloque, déjalo en blanco — no borres el documento entero.</div>
@@ -580,11 +605,11 @@
 <table class="field-table">
   <tbody>
     <tr><td>Formato</td><td>JPG o PNG. WebP también va, pero JPG es más universal.</td></tr>
-    <tr><td>Miniatura vídeo</td><td>16:9, mínimo 1280×720 px, idealmente 1920×1080.</td></tr>
+    <tr><td>Miniatura vídeo</td><td>En la proporción de su sección (sección 7). Vertical 9:16 → mín. 1080×1920 px. Cuadrado → mín. 1080×1080 px. Horizontal 16:9 → mín. 1280×720 px, idealmente 1920×1080. Panorámico 21:9 → cualquier apaisada de 1280 px de ancho o más.</td></tr>
     <tr><td>Hero de páginas</td><td>Mínimo 1920 px de ancho. La web la recorta automáticamente.</td></tr>
     <tr><td>Imagen podcast</td><td>Cuadrada, 1400×1400 px o más.</td></tr>
     <tr><td>Peso máximo</td><td>4 MB. Si pesa más, comprime con Squoosh o TinyPNG.</td></tr>
-    <tr><td>Hotspot</td><td>Pulsa la imagen en el formulario para fijar el punto focal (qué parte conservar al recortar).</td></tr>
+    <tr><td>Punto de enfoque</td><td>Pulsa la imagen en el formulario y arrastra el círculo hasta la cara o el elemento principal: es lo que la web usa para decidir qué conservar al recortar. Importa sobre todo cuando la proporción de la imagen no coincide con la de su sección; sin él, el recorte va al centro.</td></tr>
     <tr><td>Texto alt</td><td>Rellénalo siempre. Una frase corta que describa lo que se ve.</td></tr>
   </tbody>
 </table>
@@ -597,7 +622,10 @@
 <dd>Los campos con asterisco (✱) son obligatorios. Sanity marca en rojo cuáles faltan. Suele ser el slug (pulsa «Generate») o el texto alternativo de la imagen.</dd>
 
 <dt>He publicado pero no se ve el cambio en la web</dt>
-<dd>Espera 2-3 minutos (la web cachea contenidos para ir rápida). Si pasados 5 minutos no se ve, refresca con <code>Ctrl+Shift+R</code> (Windows) o <code>Cmd+Shift+R</code> (Mac) para ignorar la caché del navegador. Si sigue sin verse, avisa a Javi.</dd>
+<dd>Espera alrededor de un minuto (la web cachea contenidos para ir rápida). Si pasados 5 minutos no se ve, refresca con <code>Ctrl+Shift+R</code> (Windows) o <code>Cmd+Shift+R</code> (Mac) para ignorar la caché del navegador. Si sigue sin verse, avisa a Javi.</dd>
+
+<dt>He cambiado el formato de una sección y los vídeos salen recortados</dt>
+<dd>Es lo esperado si las miniaturas que ya había son de otra proporción: al pasar una sección a vertical, una miniatura apaisada se recorta por los lados y se queda con menos de un tercio de la imagen original. Tienes dos salidas: subir miniaturas nuevas en la proporción correcta (sección 10), o abrir cada vídeo y colocarle el punto de enfoque (sección 3), que al menos manda qué parte se conserva.</dd>
 
 <dt>He borrado algo sin querer</dt>
 <dd>No pánico. Abre la papelera del Studio (icono arriba en la columna izquierda) — los documentos borrados se conservan 30 días. Pulsa el documento → <strong>Restore</strong>.</dd>
@@ -637,7 +665,7 @@
 </section>
 
 <div class="lastpage">
-  <p>Manual editorial · v1.0 · Mayo 2026</p>
+  <p>Manual editorial · v1.1 · Julio 2026</p>
   <p>Vive en <code>docs/MANUAL-EDITORIAL.md</code> y se actualiza con cada cambio del Studio.</p>
   <p style="margin-top:6mm;"><strong>LA BERNAB<span style="color:var(--brand-red);">É</span> PRODUCCIONS</strong> — Una plataforma audiovisual de proximidad para València.</p>
 </div>
