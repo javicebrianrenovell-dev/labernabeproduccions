@@ -101,25 +101,42 @@ function normalizeEpisodio(e, i) {
 
 // ─── Cards ─────────────────────────────────────────────────────────────────
 
-function VideoCard({ item, index, sectionLabel }) {
+// Una sola tarjeta para los tres carruseles de vídeo. La geometría (proporción y
+// ancho) la decide el CSS a partir del formato del carrusel; aquí solo se elige qué
+// campos se pintan.
+function MediaCard({ item, index, variant, sectionLabel }) {
+  const esEstreno = variant === 'estreno'
+  const esDocumental = variant === 'documental'
+  const esEdu = variant === 'edu'
+
+  const entrada = esEdu
+    ? { initial: { opacity: 0, scale: 0.95 }, whileInView: { opacity: 1, scale: 1 } }
+    : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 } }
+
+  const cuerpo = (
+    <>
+      <div className="card__thumb">
+        <img src={item.img} alt={item.title} />
+        {esEstreno && <div className="card__play-overlay"><PlayIcon /></div>}
+        {esEstreno && item.badge && <span className="card__badge">{item.badge}</span>}
+        {!esEdu && <span className="card__duration">{item.duration}</span>}
+      </div>
+      <div className="card__info">
+        <p className="card__title">{item.title}</p>
+        {esDocumental && <p className="card__desc">{item.desc}</p>}
+        {esEstreno && <p className="card__meta">{sectionLabel}</p>}
+        {esEdu && <p className="card__meta">{item.duration}</p>}
+      </div>
+    </>
+  )
+
   return (
-    <motion.div className="card"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+    <motion.div
+      className={`card${esDocumental ? ' card--documental' : ''}${esEdu ? ' card--edu' : ''}`}
+      {...entrada}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1, duration: 0.4 }}>
-      <Link to="/reproductor">
-        <div className="card__thumb">
-          <img src={item.img} alt={item.title} />
-          <div className="card__play-overlay"><PlayIcon /></div>
-          {item.badge && <span className="card__badge">{item.badge}</span>}
-          <span className="card__duration">{item.duration}</span>
-        </div>
-        <div className="card__info">
-          <p className="card__title">{item.title}</p>
-          <p className="card__meta">{sectionLabel}</p>
-        </div>
-      </Link>
+      {esEstreno ? <Link to="/reproductor">{cuerpo}</Link> : cuerpo}
     </motion.div>
   )
 }
@@ -147,43 +164,6 @@ function PodcastCard({ item, index }) {
         <span className="podcast-card__ep">{item.ep}</span>
         <p className="podcast-card__title">{item.title}</p>
         <span className="podcast-card__duration">{item.duration}</span>
-      </div>
-    </motion.div>
-  )
-}
-
-function WideCard({ item, index }) {
-  return (
-    <motion.div className="wide-card"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.1, duration: 0.4 }}>
-      <div className="wide-card__thumb">
-        <img src={item.img} alt={item.title} />
-        <span className="wide-card__duration">{item.duration}</span>
-      </div>
-      <div className="wide-card__info">
-        <p className="wide-card__title">{item.title}</p>
-        <p className="wide-card__desc">{item.desc}</p>
-      </div>
-    </motion.div>
-  )
-}
-
-function SquareCard({ item, index }) {
-  return (
-    <motion.div className="square-card"
-      initial={{ opacity: 0, scale: 0.95 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.1, duration: 0.4 }}>
-      <div className="square-card__thumb">
-        <img src={item.img} alt={item.title} />
-      </div>
-      <div className="square-card__info">
-        <p className="square-card__title">{item.title}</p>
-        <p className="square-card__meta">{item.duration}</p>
       </div>
     </motion.div>
   )
@@ -303,7 +283,7 @@ export default function Home() {
         </div>
         <div className="carousel">
           {estrenos.map((item, i) => (
-            <VideoCard key={item._id} item={item} index={i} sectionLabel="Estrenos de Barrio" />
+            <MediaCard key={item._id} item={item} index={i} variant="estreno" sectionLabel="Estrenos de Barrio" />
           ))}
         </div>
       </section>
@@ -324,7 +304,7 @@ export default function Home() {
           <a href="#">{secciones.seccionDocumentales.verMas}</a>
         </div>
         <div className="carousel">
-          {documentales.map((item, i) => <WideCard key={item._id} item={item} index={i} />)}
+          {documentales.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="documental" />)}
         </div>
       </section>
 
@@ -334,7 +314,7 @@ export default function Home() {
           <a href="#">{secciones.seccionEdupolitica.verMas}</a>
         </div>
         <div className="carousel">
-          {edupolitica.map((item, i) => <SquareCard key={item._id} item={item} index={i} />)}
+          {edupolitica.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="edu" />)}
         </div>
       </section>
     </>
