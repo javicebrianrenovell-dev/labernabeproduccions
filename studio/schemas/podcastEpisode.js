@@ -53,11 +53,24 @@ export default {
       validation: (Rule) => Rule.required(),
     },
     {
+      name: 'etiquetas',
+      title: 'Categorías',
+      type: 'array',
+      of: [{type: 'reference', to: [{type: 'categoria'}]}],
+      description:
+        'Las mismas categorías que usan los vídeos (barrios, temas…). El episodio aparecerá en ' +
+        'la página de cada una y en el buscador junto a los vídeos. Ej: "Benicalap" y "Vivienda".',
+      validation: (Rule) => Rule.unique(),
+    },
+    {
       name: 'urlAudio',
-      title: 'URL del audio o página externa',
+      title: 'Enlace del episodio (YouTube, Spotify, iVoox…)',
       type: 'url',
       description:
-        'Opcional. Enlace a Spotify, Apple Podcasts o iVoox del episodio para que el botón "Escuchar" funcione.',
+        'Si es un enlace de YouTube, el episodio se reproduce dentro de la web al pulsar ' +
+        '"Escuchar". Si es de Spotify, Apple Podcasts o iVoox, se abre en esa plataforma. ' +
+        'Si lo dejas vacío, el botón no hace nada.',
+      validation: (Rule) => Rule.uri({scheme: ['http', 'https']}),
     },
     {
       name: 'destacadoHero',
@@ -79,12 +92,17 @@ export default {
       numero: 'numero',
       titulo: 'titulo',
       duracion: 'duracion',
+      etiquetas: 'etiquetas',
+      urlAudio: 'urlAudio',
       media: 'imagen',
     },
-    prepare({numero, titulo, duracion, media}) {
+    prepare({numero, titulo, duracion, etiquetas, urlAudio, media}) {
+      const n = Array.isArray(etiquetas) ? etiquetas.length : 0
       return {
         title: `EP. ${numero} — ${titulo}`,
-        subtitle: duracion,
+        subtitle: [duracion, n ? `${n} categoría${n > 1 ? 's' : ''}` : 'sin categorías', urlAudio ? null : 'SIN ENLACE']
+          .filter(Boolean)
+          .join(' · '),
         media,
       }
     },

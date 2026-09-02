@@ -48,10 +48,23 @@ export default {
     },
     {
       name: 'categoria',
-      title: 'Categoría',
+      title: 'Categoría principal',
       type: 'reference',
       to: [{type: 'categoria'}],
+      description:
+        'La que se muestra en el chip de la miniatura. Si no existe, créala primero en "Categorías".',
       validation: (Rule) => Rule.required(),
+    },
+    {
+      name: 'etiquetas',
+      title: 'Otras categorías',
+      type: 'array',
+      of: [{type: 'reference', to: [{type: 'categoria'}]}],
+      description:
+        'Añade aquí todas las demás categorías que le correspondan al vídeo (barrio + tema, ' +
+        'por ejemplo: "Benicalap" y "Movilidad"). El vídeo aparecerá en la página de cada una ' +
+        'de ellas y en el buscador.',
+      validation: (Rule) => Rule.unique(),
     },
     {
       name: 'descripcion',
@@ -62,10 +75,18 @@ export default {
     },
     {
       name: 'urlVideo',
-      title: 'URL del vídeo (YouTube / Vimeo)',
+      title: 'Enlace del vídeo en YouTube (o Vimeo)',
       type: 'url',
       description:
-        'Opcional. Cuando se conecte el reproductor real (fase 3), aquí se pega el enlace público del vídeo. De momento puede quedar vacío.',
+        'Pega el enlace tal cual lo copias de YouTube: sirve el normal (youtube.com/watch?v=…), ' +
+        'el corto (youtu.be/…) y el de Shorts (youtube.com/shorts/…). La web lo reproduce en su ' +
+        'propia página. Si lo dejas vacío, el vídeo se lista pero no se puede reproducir.',
+      validation: (Rule) =>
+        Rule.uri({scheme: ['http', 'https']}).custom((url) => {
+          if (!url) return true
+          const ok = /(youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com)\//i.test(url)
+          return ok || 'Tiene que ser un enlace de YouTube o Vimeo.'
+        }),
     },
     {
       name: 'destacado',
@@ -127,13 +148,17 @@ export default {
     select: {
       title: 'titulo',
       categoria: 'categoria.nombre',
+      etiquetas: 'etiquetas',
       duracion: 'duracion',
+      urlVideo: 'urlVideo',
       media: 'poster',
     },
-    prepare({title, categoria, duracion, media}) {
+    prepare({title, categoria, etiquetas, duracion, urlVideo, media}) {
+      const extra = Array.isArray(etiquetas) && etiquetas.length ? `+${etiquetas.length}` : null
+      const sinVideo = urlVideo ? null : 'SIN ENLACE DE VÍDEO'
       return {
         title,
-        subtitle: [categoria, duracion].filter(Boolean).join(' · '),
+        subtitle: [categoria, extra, duracion, sinVideo].filter(Boolean).join(' · '),
         media,
       }
     },

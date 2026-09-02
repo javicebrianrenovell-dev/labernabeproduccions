@@ -406,6 +406,121 @@ img { display: block; max-width: 100%; }
 .podcast-cta__form input { flex: 1; background: var(--surface-container-high); border: 1px solid var(--surface-container-highest); color: var(--white); font-size: var(--body-md); padding: var(--space-3) var(--space-4); border-radius: var(--radius); font-family: var(--font); }
 .podcast-cta__form input:focus { border-color: var(--primary); outline: none; }
 
+
+/* ═══ CATEGORÍAS: CHIPS ═══ */
+/* El color viene del documento "Categoría" en Sanity como --chip-color. Sin color,
+   la variante --neutro pinta el chip en gris para que se note que falta elegirlo. */
+.chips-row { display: flex; flex-wrap: nowrap; gap: var(--space-1); overflow: hidden; margin-top: var(--space-1); }
+.chips-row--wrap, .chips-row--lg { flex-wrap: wrap; gap: var(--space-2); }
+.chips-row--lg { margin-bottom: var(--space-3); }
+.cat-chip { --chip-color: var(--surface-container-highest); display: inline-flex; align-items: center; gap: 6px; background: var(--chip-color); color: var(--white); font-weight: 700; letter-spacing: 0.02em; border-radius: var(--radius-full); border: 1px solid rgba(255,255,255,0.14); white-space: nowrap; line-height: 1; cursor: pointer; transition: transform 0.15s var(--ease-out), box-shadow 0.15s, filter 0.15s; font-family: var(--font); text-shadow: 0 1px 1px rgba(0,0,0,0.25); }
+.cat-chip:hover { transform: translateY(-1px); filter: brightness(1.12); box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+.cat-chip--sm { font-size: var(--label-sm); padding: 4px 9px; }
+.cat-chip--md { font-size: var(--body-sm); padding: 7px 14px; }
+.cat-chip--neutro { color: var(--on-surface); background: var(--surface-container-highest); text-shadow: none; }
+.cat-chip--activo { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--chip-color); }
+.cat-chip--activo.cat-chip--neutro { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface-muted); }
+button.cat-chip:not(.cat-chip--activo) { opacity: 0.85; }
+button.cat-chip:not(.cat-chip--activo):hover { opacity: 1; }
+
+/* ═══ NAVBAR: LUPA + MENÚ MÓVIL ═══ */
+.navbar__actions { display: flex; align-items: center; gap: var(--space-3); }
+.navbar__icon-btn { background: transparent; color: var(--on-surface-muted); width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.navbar__icon-btn:hover, .navbar__icon-btn.active { color: var(--white); background: rgba(255,255,255,0.08); }
+.navbar__toggle { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 38px; height: 38px; background: transparent; border-radius: var(--radius); }
+.navbar__toggle span { display: block; width: 22px; height: 2px; margin: 0 auto; background: var(--white); border-radius: 2px; transition: transform 0.25s var(--ease-out), opacity 0.2s; }
+.navbar__toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.navbar__toggle.open span:nth-child(2) { opacity: 0; }
+.navbar__toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.navbar__drawer { position: fixed; inset: 0; z-index: 99; background: rgba(19,19,19,0.98); padding: 96px var(--space-6) var(--space-8); display: flex; flex-direction: column; justify-content: space-between; animation: fadeInUp 0.25s var(--ease-out); }
+.navbar__drawer ul { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
+.navbar__drawer a { display: flex; align-items: center; gap: var(--space-3); font-size: var(--headline-md); font-weight: 700; color: var(--on-surface-muted); padding: var(--space-3) 0; border-bottom: 1px solid var(--surface-container-high); }
+.navbar__drawer a.active, .navbar__drawer a:hover { color: var(--white); }
+.navbar__drawer .navbar__cta { width: 100%; padding: var(--space-4); font-size: var(--body-md); }
+
+/* ═══ TARJETA EN REJILLA (buscador, categoría, relacionados) ═══ */
+/* Cuadrada a propósito: es el único recorte que aguanta a la vez un póster
+   vertical de Shorts y uno panorámico de documental cuando el punto de enfoque
+   está bien puesto. */
+.contenido-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-4); }
+.card--grid { --card-ar: 1/1; flex: none; width: auto; }
+.card--grid > a { display: block; height: 100%; }
+.card--grid .card__title--wrap { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: clip; min-height: 2.6em; }
+.card--grid .card__meta { margin-top: var(--space-2); }
+.card__kind { position: absolute; top: var(--space-2); left: var(--space-2); background: rgba(0,0,0,0.7); color: var(--white); font-size: var(--label-sm); font-weight: 600; padding: 2px var(--space-2); border-radius: 4px; letter-spacing: 0.02em; }
+.card--podcast .card__kind { background: var(--primary); }
+.grid-vacio { color: var(--on-surface-muted); font-size: var(--body-md); padding: var(--space-10) 0; text-align: center; }
+
+/* ═══ EXPLORAR / BUSCAR ═══ */
+.explorar-page { padding-top: 96px; padding-bottom: var(--space-16); }
+.explorar__head { padding: var(--space-8) var(--space-10) var(--space-4); max-width: 900px; }
+.explorar__head h1 { font-size: var(--display-md); font-weight: 900; letter-spacing: -0.03em; color: var(--white); line-height: 1.05; margin-bottom: var(--space-3); }
+.explorar__sub { color: var(--on-surface-muted); font-size: var(--body-md); margin-bottom: var(--space-6); max-width: 560px; }
+.buscador { display: flex; align-items: center; gap: var(--space-3); background: var(--surface-container-high); border: 1px solid var(--surface-container-highest); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); color: var(--on-surface-muted); transition: border-color 0.2s, box-shadow 0.2s; }
+.buscador:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(227,6,19,0.18); color: var(--white); }
+.buscador input { flex: 1; background: transparent; border: none; outline: none; color: var(--white); font-family: var(--font); font-size: var(--body-lg); min-width: 0; }
+.buscador input::placeholder { color: var(--on-surface-muted); }
+.buscador input::-webkit-search-cancel-button { display: none; }
+.buscador__limpiar { background: transparent; color: var(--on-surface-muted); font-size: 1.4rem; line-height: 1; padding: 0 var(--space-2); }
+.buscador__limpiar:hover { color: var(--white); }
+.filtro-tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0 var(--space-10); margin: var(--space-4) 0; }
+.explorar__categorias { padding: var(--space-2) var(--space-10) var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); border-bottom: 1px solid var(--surface-container-high); }
+.chips-grupo { display: flex; align-items: flex-start; gap: var(--space-4); }
+.chips-grupo__titulo { flex: 0 0 80px; font-size: var(--label-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-muted); padding-top: 8px; }
+.explorar__resultados { padding: var(--space-8) var(--space-10) 0; }
+.explorar__resultados .section-header h2 { font-size: var(--headline-sm); }
+.explorar__pie { margin-top: var(--space-8); text-align: center; }
+.explorar__pie a { color: var(--primary-soft); font-weight: 600; }
+.explorar__pie a:hover { color: var(--primary); }
+
+/* ═══ PÁGINA DE CATEGORÍA ═══ */
+.categoria-page { padding-top: 64px; }
+.cat-hero { --cat-color: var(--surface-container-highest); position: relative; padding: var(--space-16) var(--space-10) var(--space-10); overflow: hidden; }
+.cat-hero__band { position: absolute; inset: 0; background: radial-gradient(ellipse at 15% 0%, color-mix(in srgb, var(--cat-color) 55%, transparent) 0%, transparent 55%), linear-gradient(to bottom, color-mix(in srgb, var(--cat-color) 22%, var(--surface)) 0%, var(--surface) 100%); }
+.cat-hero__content { position: relative; z-index: 1; max-width: 800px; }
+.cat-hero__volver { display: inline-block; font-size: var(--body-sm); color: var(--on-surface-muted); margin-bottom: var(--space-6); }
+.cat-hero__volver:hover { color: var(--white); }
+.cat-hero__tipo { display: block; font-size: var(--label-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--on-surface-muted); margin-bottom: var(--space-2); }
+.cat-hero__title { font-size: var(--display-lg); font-weight: 900; letter-spacing: -0.03em; line-height: 1.05; color: var(--white); margin-bottom: var(--space-3); }
+.cat-hero__hash { color: var(--cat-color); filter: brightness(1.3); margin-right: 0.05em; }
+.cat-hero__desc { font-size: var(--body-lg); color: var(--on-surface); max-width: 600px; margin-bottom: var(--space-3); }
+.cat-hero__meta { font-size: var(--body-sm); color: var(--on-surface-muted); }
+.categoria-page .filtro-tabs { padding: 0; margin: 0 0 var(--space-6); }
+
+/* ═══ PÁGINA DE VÍDEO (reproductor real) ═══ */
+.video-page { padding-top: 64px; }
+.video-page__estado { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4); text-align: center; padding: var(--space-10); color: var(--on-surface-muted); }
+.video-page__estado h1 { color: var(--white); font-size: var(--headline-lg); }
+.video-embed { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; max-height: 78vh; }
+.video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* Shorts: 9:16 centrado sobre negro, sin superar el alto de la pantalla. */
+.video-embed--vertical { aspect-ratio: auto; height: min(78vh, 720px); display: flex; justify-content: center; }
+.video-embed--vertical iframe { position: relative; inset: auto; height: 100%; width: auto; aspect-ratio: 9/16; max-width: 100%; }
+.video-embed__pendiente { position: absolute; inset: 0; }
+.video-embed__pendiente img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.45); }
+.video-embed__pendiente-msg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3); color: var(--white); }
+.video-embed__pendiente-msg svg { fill: var(--white); opacity: 0.8; }
+.video-embed__pendiente-msg p { font-size: var(--body-lg); font-weight: 700; letter-spacing: 0.02em; }
+.share-btn { text-decoration: none; }
+.share-btn svg { fill: currentColor; }
+.related-section .section-header { margin-bottom: var(--space-4); }
+
+/* ═══ PODCAST: CATEGORÍAS Y REPRODUCCIÓN ═══ */
+.podcast-embed { padding: 0 var(--space-10); margin-top: calc(-1 * var(--space-6)); position: relative; z-index: 2; }
+.podcast-embed__frame { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-lg); overflow: hidden; }
+.podcast-embed__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.podcast-embed__frame--fila { margin: calc(-1 * var(--space-2)) 0 var(--space-3); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.podcast-embed__frame--vertical { aspect-ratio: auto; height: min(70vh, 640px); display: flex; justify-content: center; }
+.podcast-embed__frame--vertical iframe { position: relative; inset: auto; height: 100%; width: auto; aspect-ratio: 9/16; }
+.episode-row__info .chips-row { margin-top: var(--space-2); }
+.episode-row__externo { display: block; font-size: var(--label-sm); color: var(--primary-soft); margin-top: 2px; }
+.episode-row--sin-enlace { cursor: default; }
+.episode-row--sin-enlace .episode-row__externo { color: var(--on-surface-muted); }
+.episode-row__play:disabled { cursor: default; opacity: 0 !important; }
+.podcast-hero__content .chips-row { margin-bottom: var(--space-4); }
+.podcast-card__link { display: flex; align-items: center; gap: var(--space-4); width: 100%; }
+.btn-play:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 1024px) { .testimonials-grid { grid-template-columns: repeat(2, 1fr); } .pitch-layout { grid-template-columns: 1fr; } .pitch-leaderboard { position: static; } }
 @media (max-width: 768px) {
@@ -424,4 +539,21 @@ img { display: block; max-width: 100%; }
   /* Solo el vertical: es el único formato nuevo. Los otros tres no tienen ajuste
      móvil hoy y tocarlos cambiaría la web actual. */
   .carousel--vertical { --card-w: 150px; }
+  .navbar__toggle { display: flex; }
+  .navbar__logo span { font-size: var(--body-md); white-space: nowrap; }
+  .navbar__actions { gap: var(--space-1); }
+  .navbar__cta-link { display: none; }
+  .explorar__head, .explorar__resultados, .explorar__categorias, .filtro-tabs, .podcast-embed { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .explorar__head h1 { font-size: var(--headline-lg); }
+  .chips-grupo { flex-direction: column; gap: var(--space-2); }
+  .chips-grupo__titulo { flex: none; padding-top: 0; }
+  .contenido-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+  .cat-hero { padding: var(--space-10) var(--space-4) var(--space-6); }
+  .cat-hero__title { font-size: var(--display-md); }
+  .video-embed { max-height: none; }
+  .video-embed--vertical { height: min(70vh, 640px); }
+  .episode-row { flex-wrap: wrap; }
+  .episode-row__number { display: none; }
+  .episode-row__meta { flex: 1 0 100%; text-align: left; display: flex; gap: var(--space-3); align-items: baseline; padding-left: calc(80px + var(--space-4)); }
+  .episode-row__wave { display: none; }
 }

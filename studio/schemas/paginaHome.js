@@ -57,10 +57,19 @@ export default {
         },
         {
           name: 'countdownTexto',
-          title: 'Texto del countdown',
+          title: 'Texto de la cuenta atrás',
           type: 'string',
-          description: 'Ej: "Próximo estreno en"',
+          description: 'Ej: "Próximo estreno en". Solo se ve si hay una fecha en el campo siguiente.',
           initialValue: 'Próximo estreno en',
+        },
+        {
+          name: 'proximoEstreno',
+          title: 'Fecha y hora del próximo estreno',
+          type: 'datetime',
+          description:
+            'La web muestra una cuenta atrás real hasta este momento. Si está vacío o ya ha ' +
+            'pasado, la cuenta atrás no se muestra.',
+          options: {timeStep: 15},
         },
       ],
     },
