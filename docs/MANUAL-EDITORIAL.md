@@ -52,9 +52,9 @@ Es la operación más frecuente. Se hace en menos de 3 minutos cuando tienes el 
 - El **título** del vídeo.
 - Una **miniatura** con la misma proporción que tenga configurada la sección donde va a ir (ver sección 7). Si la sección está en *Vertical 9:16*, súbela vertical (mínimo 1080×1920 px); si está en *Horizontal* o *Panorámico*, apaisada (mínimo 1280×720 px). Máximo 4 MB. Sirve JPG o PNG.
 - La **duración** del vídeo (ej: `4:12`).
-- La **categoría** a la que pertenece (si no existe, antes hay que crearla — ver sección 6).
+- La **categoría principal** (barrio, tema o formato) y, si aplica, las **otras categorías** que le correspondan. Si alguna no existe, antes hay que crearla (ver sección 6).
 - (Opcional) Una **descripción** corta.
-- (Opcional) La **URL pública** del vídeo en YouTube o Vimeo.
+- El **enlace del vídeo en YouTube** (el que copias con el botón «Compartir» de YouTube). Sin él, el vídeo se lista pero no se puede reproducir.
 
 ### Paso a paso
 
@@ -64,9 +64,10 @@ Es la operación más frecuente. Se hace en menos de 3 minutos cuando tienes el 
    - **Slug (URL)** — se rellena solo a partir del título. Pulsa **"Generate"** si está vacío. Solo edítalo a mano si necesitas una URL distinta del título; en ese caso usa solo minúsculas, sin acentos ni espacios (guiones en su lugar).
    - **Imagen poster (miniatura)** — arrastra la imagen o pulsa "Upload". Súbela en la proporción de su sección (ver sección 7). Después **pulsa sobre la imagen** y arrastra el círculo del *punto de enfoque* hasta la cara o el elemento principal: es lo que la web usa para recortar sin cortar lo importante. Importante: rellena también el campo **"Texto alternativo"** con una frase corta que describa la imagen (es lo que leen los lectores de pantalla y Google).
    - **Duración** — texto libre tipo `4:12` o `1:23:45`.
-   - **Categoría** — pulsa, busca la categoría existente. Si no aparece, créala primero (sección 6) y vuelve.
-   - **Descripción** — opcional. 2-4 líneas.
-   - **URL del vídeo** — opcional. De momento puede quedar vacío (todavía no está el reproductor real conectado). Cuando llegue la fase 3, aquí se pegará el enlace de YouTube o Vimeo.
+   - **Categoría principal** — pulsa, busca la categoría existente. Es la que se ve en el chip de la miniatura. Si no aparece, créala primero (sección 6) y vuelve.
+   - **Otras categorías** — pulsa «Add item» y añade todas las demás que le correspondan. Lo normal es que una visita de barrio lleve el barrio como principal (*Benicalap*) y el tema como secundaria (*Limpieza*, *Movilidad*…). El vídeo aparece en la página de cada una de sus categorías y en el buscador.
+   - **Descripción** — opcional. 2-4 líneas. El buscador también busca aquí, así que merece la pena escribirla.
+   - **Enlace del vídeo en YouTube** — pega el enlace tal cual sale del botón «Compartir» de YouTube. Sirven los tres formatos: `youtube.com/watch?v=…`, `youtu.be/…` y `youtube.com/shorts/…`. Los Shorts se reproducen en vertical en la web. Si lo dejas vacío, la miniatura muestra «Muy pronto disponible».
    - **Destacado** — actívalo si quieres que aparezca en lugares prominentes (hero, listas de inicio). Úsalo con criterio: si todo está destacado, nada lo está.
    - **Sección en la página de inicio** — elige en qué carrusel quieres que salga:
      - *Estrenos de Barrio* (default — vídeos recientes).
@@ -94,7 +95,8 @@ Casi idéntico al vídeo, pero con sus campos propios.
    - **Fecha de publicación** — formato `YYYY-MM-DD`.
    - **Duración** — texto libre. Ej: `45 min` o `1h 12 min`.
    - **Imagen del episodio** — cuadrada idealmente (formato podcast).
-   - **URL del audio o página externa** — opcional. Enlace a Spotify, Apple Podcasts o iVoox.
+   - **Categorías** — las mismas que usan los vídeos (barrios, temas…). Así, al buscar «Benicalap» salen juntos los vídeos y los episodios de ese barrio.
+   - **Enlace del episodio** — si es un enlace de **YouTube**, el episodio se reproduce dentro de la web al pulsar «Escuchar». Si es de Spotify, Apple Podcasts o iVoox, el botón abre esa plataforma. Vacío, el botón queda desactivado y la fila marca «Próximamente».
    - **Mostrar en el hero (último episodio)** — actívalo solo en **el episodio más reciente**. Si quedan varios marcados, la web coge automáticamente el más reciente, pero conviene que solo uno tenga la marca.
 3. **Publish**.
 
@@ -113,18 +115,33 @@ Aparecen en la sección *Club* de la web.
 
 ---
 
-## 6. Cómo crear o editar una categoría
+## 6. Categorías: cómo funcionan, cómo se crean y dónde se ven
 
-Las categorías sirven para agrupar vídeos (Barrio, Movilidad, Documentales…) y se muestran como pequeños "chips" coloreados en la web.
+Una categoría funciona como un **hashtag**: `#benicalap` agrupa todo lo que se ha publicado sobre Benicalap, sea un vídeo de visita de barrio o un episodio del podcast. Cada categoría tiene **tres sitios en la web**:
 
-1. Menú → **Categorías** → **+** (o pulsa una existente para editarla).
+- **Su propia página**: `pilarbernabe.es/categoria/benicalap`. Lista todo el contenido de esa categoría, vídeos y podcast juntos, del más reciente al más antiguo. Es el enlace que conviene compartir en redes cuando se habla de un barrio.
+- **El buscador** (la lupa de arriba a la derecha, o `pilarbernabe.es/buscar`): escribe cualquier palabra y busca a la vez en títulos, descripciones y categorías, sin distinguir acentos ni mayúsculas. Debajo del buscador están todas las categorías como botones, agrupadas en *Barrios*, *Temas* y *Formatos*; pulsar una filtra los resultados.
+- **El chip de color** que aparece en cada miniatura de la home, en cada tarjeta del buscador y en la cabecera de cada vídeo. Pulsarlo lleva a la página de la categoría.
+
+### Crear o editar una categoría
+
+1. Menú → **Categorías** → **Todas** → **+** (o pulsa una existente para editarla).
 2. Campos:
-   - **Nombre** — corto, máx. 40 caracteres.
-   - **Slug** — se rellena solo. Solo edítalo si necesitas algo distinto.
-   - **Color del chip** — opcional. Código HEX (`#RRGGBB`). Si no lo pones, la web usa el color por defecto.
+   - **Nombre** — corto, máx. 40 caracteres. Es lo que se lee en el chip.
+   - **Slug** — se rellena solo con «Generate». Es la dirección de la página de la categoría.
+   - **Tipo de categoría** — *Barrio o zona*, *Tema* o *Formato*. Solo sirve para que el buscador las agrupe. Si no marcas nada, cuenta como Tema.
+   - **Color del chip** — despliega la lista y elige uno de los doce colores por su nombre (Rojo Bernabé, Naranja, Verde, Azul…). No hay que escribir códigos. Ese color es el que se ve en la web. Si no eliges ninguno, el chip sale en gris.
+   - **Descripción** — opcional. Una o dos frases que encabezan la página de la categoría. Ej: «Todo lo que Pilar ha hecho y propone para Benicalap».
 3. **Publish**.
 
-> Si borras una categoría que algún vídeo está usando, esos vídeos se quedarán huérfanos y la web puede romperse. **Antes de borrar una categoría**, comprueba que ningún vídeo la usa. La forma fácil: filtra los vídeos por esa categoría en la lista.
+### Ver el color y el contenido de cada categoría sin abrir la web
+
+- En la lista **Categorías** cada fila lleva un círculo con su color (un círculo gris discontinuo significa «sin color»).
+- En el menú **Contenido por categoría** eliges una categoría y ves todos los vídeos y episodios que la llevan. Es la forma de comprobar qué le falta a un barrio antes de compartir su página.
+
+> **Consejo de uso:** una categoría por barrio (Benicalap, Nazaret, La Roqueta…) y unas pocas por tema (Limpieza, Movilidad, Vivienda…). A cada vídeo se le pone el barrio como categoría principal y el tema en «Otras categorías». Con eso, `#benicalap` y `#limpieza` funcionan los dos.
+
+> Si borras una categoría que algún vídeo o episodio está usando, ese contenido se queda con una referencia rota y el Studio lo marcará en rojo. **Antes de borrar una categoría**, entra en *Contenido por categoría* y comprueba que está vacía.
 
 ---
 
@@ -135,7 +152,7 @@ Cada página de la web tiene un **documento único** en el Studio. Cuando lo edi
 ### Página: Inicio
 
 Bloques editables:
-- **Hero principal** — la imagen grande de arriba, el título, el subtítulo, el texto de la etiqueta (`EN DIRECTO`), el botón principal y su destino, el texto del contador (`Próximo estreno en`).
+- **Hero principal** — la imagen grande de arriba, el título, el subtítulo, el texto de la etiqueta (`EN DIRECTO`), el botón principal y su destino, y la **cuenta atrás**: pon la **fecha y hora del próximo estreno** y la web muestra una cuenta atrás real hasta ese momento. Si el campo está vacío o la fecha ya ha pasado, la cuenta atrás no se muestra.
 - **Sección "Estrenos de Barrio"** — título, texto del enlace "ver más" y **formato de las miniaturas**.
 - **Sección "Podcast"** — título y texto del enlace "ver más".
 - **Sección "Documentales"** — título, texto del enlace "ver más" y **formato de las miniaturas**.
@@ -243,6 +260,21 @@ Comprueba el campo *"Sección en la página de inicio"* del vídeo. Si lo cambia
 **"¿Puedo programar un vídeo para que se publique a futuro?"**
 Sí. En el campo *"Fecha de publicación"* pon la fecha futura. Pulsa Publish. El vídeo aparecerá automáticamente cuando llegue esa fecha (la web filtra por fecha).
 
+**"No veo la lupa de búsqueda"**
+Está arriba a la derecha, junto al botón «Suscríbete». En el móvil, también dentro del menú (las tres rayas). La dirección directa es `pilarbernabe.es/buscar`.
+
+**"He creado una categoría pero no sale en el buscador"**
+El buscador solo muestra las categorías que tienen al menos un vídeo o episodio. Asigna la categoría a algún contenido y aparecerá. Si la acabas de crear, espera un minuto.
+
+**"No sé qué color tiene una categoría ni cómo cambiarlo"**
+En la lista *Categorías*, cada fila lleva un círculo con su color. Para cambiarlo, abre la categoría y despliega *Color del chip*: se elige por nombre, sin códigos. Ver sección 6.
+
+**"Quiero que #benicalap muestre a la vez la visita de barrio y el podcast"**
+Pon la categoría *Benicalap* en el vídeo (como principal o en *Otras categorías*) y también en el episodio del podcast (campo *Categorías*). La página `pilarbernabe.es/categoria/benicalap` los mostrará juntos.
+
+**"Salen vídeos que no son nuestros (Russafa se Transforma, El Nuevo Parque de Benimaclet…)"**
+Son los 14 vídeos y 8 episodios de demostración con los que se montó la web en mayo. No tienen enlace ni miniatura. Se pueden borrar desde el Studio uno a uno (abrir → «⋯» → Delete) o pedirle a Javi que los quite de golpe.
+
 **"¿Puedo trabajar con otro miembro del equipo a la vez?"**
 Sí. Sanity Studio muestra en tiempo real qué documento está editando cada persona. Si dos personas editan el mismo documento a la vez, las dos veréis lo que escribe la otra. Para evitar pisarse, coordinaos por chat.
 
@@ -265,4 +297,4 @@ Si necesitas que alguien más entre, escríbele a Javi con el email de esa perso
 
 ---
 
-*Última actualización: 2026-05-19. Este manual vive en `docs/MANUAL-EDITORIAL.md` del repositorio del proyecto y se actualiza cuando hay cambios en el Studio.*
+*Última actualización: 2026-09-02 (v1.2: categorías como hashtags, buscador, reproductor de YouTube, cuenta atrás real, menú móvil). Este manual vive en `docs/MANUAL-EDITORIAL.md` del repositorio del proyecto y se actualiza cuando hay cambios en el Studio.*

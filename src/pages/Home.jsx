@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { fetchPaginaHome, fetchVideosBySeccion, fetchEpisodios } from '../sanity/queries'
 import { urlFor } from '../sanity/imageUrl'
+import { categoriasDe, rutaDe } from '../lib/contenido'
+import { ChipsDe } from '../components/CategoriaChip'
 
 const PlayIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -17,6 +19,7 @@ const FALLBACK_HERO = {
   ctaTexto: 'Ver Ahora',
   ctaRuta: '/reproductor',
   countdownTexto: 'Próximo estreno en',
+  proximoEstreno: null,
   imagenUrl: '/images/hero.png',
   imagenAlt: 'València',
 }
@@ -103,10 +106,13 @@ function normalizeVideo(v) {
   if (!isFromSanity) return v
   return {
     _id: v._id,
+    _type: v._type,
+    slug: v.slug,
     title: v.titulo,
     duration: v.duracion,
     badge: v.badgeHome,
     desc: v.descripcion,
+    categorias: categoriasDe(v),
     // Se guarda la imagen sin procesar: la URL con su recorte se calcula al
     // pintar, cuando ya se conoce el formato de la sección. El formato llega de
     // fetchPaginaHome(), que es una petición independiente de la de los vídeos y
@@ -134,10 +140,12 @@ function normalizeEpisodio(e, i) {
   if (e.imagen) {
     try {
       img = urlFor(e.imagen).width(400).height(400).fit('crop').auto('format').url()
-    } catch (err) { /* ignore */ }
+    } catch { /* ignore */ }
   }
   return {
     _id: e._id,
+    _type: e._type,
+    slug: e.slug,
     ep: `Ep. ${e.numero}`,
     title: e.titulo,
     duration: e.duracion,
@@ -155,6 +163,9 @@ function MediaCard({ item, index, variant, formato, sectionLabel }) {
   const esEstreno = variant === 'estreno'
   const esDocumental = variant === 'documental'
   const esEdu = variant === 'edu'
+  const categorias = item.categorias || []
+  // Los fallbacks locales no tienen slug: llevan al catálogo.
+  const destino = item.slug ? rutaDe(item) : '/reproductor'
 
   const entrada = esEdu
     ? { initial: { opacity: 0, scale: 0.95 }, whileInView: { opacity: 1, scale: 1 } }
@@ -163,15 +174,17 @@ function MediaCard({ item, index, variant, formato, sectionLabel }) {
   const cuerpo = (
     <>
       <div className="card__thumb">
-        <img src={posterUrl(item, formato)} alt={item.title} />
-        {esEstreno && <div className="card__play-overlay"><PlayIcon /></div>}
+        <img src={posterUrl(item, formato)} alt={item.title} loading="lazy" />
+        <div className="card__play-overlay"><PlayIcon /></div>
         {esEstreno && item.badge && <span className="card__badge">{item.badge}</span>}
         {!esEdu && <span className="card__duration">{item.duration}</span>}
       </div>
       <div className="card__info">
         <p className="card__title">{item.title}</p>
         {esDocumental && <p className="card__desc">{item.desc}</p>}
-        {esEstreno && <p className="card__meta">{sectionLabel}</p>}
+        {categorias.length > 0
+          ? <ChipsDe categorias={categorias} max={2} />
+          : esEstreno && <p className="card__meta">{sectionLabel}</p>}
         {esEdu && <p className="card__meta">{item.duration}</p>}
       </div>
     </>
@@ -183,18 +196,20 @@ function MediaCard({ item, index, variant, formato, sectionLabel }) {
       {...entrada}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1, duration: 0.4 }}>
-      {esEstreno ? <Link to="/reproductor">{cuerpo}</Link> : cuerpo}
+      <Link to={destino}>{cuerpo}</Link>
     </motion.div>
   )
 }
 
 function PodcastCard({ item, index }) {
+  const destino = item.slug ? rutaDe(item) : '/podcast'
   return (
     <motion.div className={`podcast-card ${item.active ? 'active' : ''}`}
       initial={{ opacity: 0, x: 20 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1, duration: 0.4 }}>
+      <Link to={destino} className="podcast-card__link">
       <div className="podcast-card__thumb">
         <img src={item.img} alt={item.title} />
         <div className="podcast-card__play-btn">
@@ -212,33 +227,46 @@ function PodcastCard({ item, index }) {
         <p className="podcast-card__title">{item.title}</p>
         <span className="podcast-card__duration">{item.duration}</span>
       </div>
+      </Link>
     </motion.div>
   )
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
+// Seconds left until `iso`; null when there is no date or it already passed.
+function restanteHasta(iso, ahora = Date.now()) {
+  if (!iso) return null
+  const diff = Math.floor((new Date(iso).getTime() - ahora) / 1000)
+  return Number.isFinite(diff) && diff > 0 ? diff : null
+}
+
+function formatearRestante(seg) {
+  const d = Math.floor(seg / 86400)
+  const h = Math.floor((seg % 86400) / 3600)
+  const m = Math.floor((seg % 3600) / 60)
+  const s = seg % 60
+  const pad = (n) => String(n).padStart(2, '0')
+  return d > 0 ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`
+}
+
 export default function Home() {
-  const [time, setTime] = useState({ h: 2, m: 15, s: 0 })
   const [hero, setHero] = useState(FALLBACK_HERO)
+  const [ahora, setAhora] = useState(() => Date.now())
   const [secciones, setSecciones] = useState(FALLBACK_SECCIONES)
   const [estrenos, setEstrenos] = useState(FALLBACK_ESTRENOS)
   const [podcasts, setPodcasts] = useState(FALLBACK_PODCASTS)
   const [documentales, setDocumentales] = useState(FALLBACK_DOCUMENTALES)
   const [edupolitica, setEdupolitica] = useState(FALLBACK_EDUPOLITICA)
 
+  // La cuenta atrás solo existe si el equipo ha puesto una fecha futura en
+  // "Página: Inicio" → Hero → Fecha y hora del próximo estreno.
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTime((prev) => {
-        let { h, m, s } = prev
-        if (s > 0) s--
-        else if (m > 0) { m--; s = 59 }
-        else if (h > 0) { h--; m = 59; s = 59 }
-        return { h, m, s }
-      })
-    }, 1000)
+    if (!restanteHasta(hero.proximoEstreno)) return undefined
+    const interval = setInterval(() => setAhora(Date.now()), 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [hero.proximoEstreno])
+  const restante = restanteHasta(hero.proximoEstreno, ahora)
 
   useEffect(() => {
     let cancelled = false
@@ -250,7 +278,7 @@ export default function Home() {
           if (page.hero.imagen) {
             try {
               imagenUrl = urlFor(page.hero.imagen).width(1920).height(1080).fit('crop').auto('format').url()
-            } catch (e) { /* ignore */ }
+            } catch { /* ignore */ }
           }
           setHero({
             ...FALLBACK_HERO,
@@ -299,8 +327,6 @@ export default function Home() {
     return () => { cancelled = true }
   }, [])
 
-  const pad = (n) => String(n).padStart(2, '0')
-
   const fmtEstrenos = formatoDe(secciones, 'seccionEstrenos')
   const fmtDocumentales = formatoDe(secciones, 'seccionDocumentales')
   const fmtEdupolitica = formatoDe(secciones, 'seccionEdupolitica')
@@ -320,9 +346,11 @@ export default function Home() {
             <Link to={hero.ctaRuta || '/reproductor'}>
               <button className="btn-play"><PlayIcon /> {hero.ctaTexto}</button>
             </Link>
-            <div className="hero__countdown">
-              {hero.countdownTexto} <span>{pad(time.h)}:{pad(time.m)}:{pad(time.s)}</span>
-            </div>
+            {restante !== null && (
+              <div className="hero__countdown">
+                {hero.countdownTexto} <span>{formatearRestante(restante)}</span>
+              </div>
+            )}
           </div>
         </motion.div>
       </section>
@@ -330,7 +358,7 @@ export default function Home() {
       <section className="content-section" id="estrenos">
         <div className="section-header">
           <h2>{secciones.seccionEstrenos.titulo}</h2>
-          <Link to="/reproductor">{secciones.seccionEstrenos.verMas}</Link>
+          <Link to="/reproductor?seccion=estrenos">{secciones.seccionEstrenos.verMas}</Link>
         </div>
         <div className={`carousel carousel--${fmtEstrenos}`}>
           {estrenos.map((item, i) => (
@@ -352,7 +380,7 @@ export default function Home() {
       <section className="content-section" id="documentales">
         <div className="section-header">
           <h2>{secciones.seccionDocumentales.titulo}</h2>
-          <a href="#">{secciones.seccionDocumentales.verMas}</a>
+          <Link to="/reproductor?seccion=documentales">{secciones.seccionDocumentales.verMas}</Link>
         </div>
         <div className={`carousel carousel--${fmtDocumentales}`}>
           {documentales.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="documental" formato={fmtDocumentales} />)}
@@ -362,7 +390,7 @@ export default function Home() {
       <section className="content-section" id="educacion">
         <div className="section-header">
           <h2>{secciones.seccionEdupolitica.titulo}</h2>
-          <a href="#">{secciones.seccionEdupolitica.verMas}</a>
+          <Link to="/reproductor?seccion=edupolitica">{secciones.seccionEdupolitica.verMas}</Link>
         </div>
         <div className={`carousel carousel--${fmtEdupolitica}`}>
           {edupolitica.map((item, i) => <MediaCard key={item._id} item={item} index={i} variant="edu" formato={fmtEdupolitica} />)}
