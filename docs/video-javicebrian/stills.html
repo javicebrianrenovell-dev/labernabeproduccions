@@ -189,14 +189,14 @@ glass() {
     display: 'flex', alignItems: 'center', justifyContent: 'center' }, c,
     `<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#f3efe8" stroke-width="2" stroke-linecap="round">
       <path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>`);
-  el('div', { left: '170px', top: '30px', font: "600 26px 'Geist'", color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.25)' }, c, 'Luz');
+  el('div', { left: '170px', top: '30px', font: "600 26px 'Geist'", color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.25)' }, c, 'Intención');
   // track
   const trackL = 170, trackR = tb.w - 60, trackY = 108;
   el('div', { left: trackL + 'px', top: trackY + 'px', width: (trackR - trackL) + 'px', height: '8px', borderRadius: '4px',
     background: 'rgba(255,255,255,.38)' }, c);
   el('div', { left: trackL + 'px', top: trackY + 'px', width: (knobX - tb.x - trackL) + 'px', height: '8px', borderRadius: '4px',
     background: '#fff' }, c);
-  el('div', { right: '60px', top: '30px', font: "500 24px 'Geist'", color: 'rgba(255,255,255,.92)' }, c, 'Hora dorada');
+  el('div', { right: '60px', top: '30px', font: "500 24px 'Geist'", color: 'rgba(255,255,255,.92)' }, c, 'Decisión');
 
   // held knob, already swelling into a lens (beat 26 preview: magnifies what's behind it)
   const kd = 132, kx = knobX - kd / 2, ky = tb.y + trackY + 4 - kd / 2;
@@ -222,46 +222,46 @@ stage() {
     padding: '0 56px', boxSizing: 'border-box', gap: '44px', font: "500 24px 'Geist'", color: '#4a4741' }, win);
   el('div', { fontFamily: 'Archivo', fontWeight: 800, fontVariationSettings: "'wdth' 125", fontSize: '30px', color: '#0b0b0b',
     letterSpacing: '-.01em', marginRight: 'auto' }, nav, 'Javi Cebrián.');
-  ['Servicios', 'Casos', 'Sobre mí'].forEach(t => el('div', {}, nav, t));
+  ['Comunicación', 'Sostenibilidad', 'IA', 'Blog', 'Contacto'].forEach(t => el('div', {}, nav, t));
 
   // case card
   const card = el('div', { position: 'absolute', left: '56px', top: '210px', width: '1256px', height: '1040px', borderRadius: '30px',
     background: '#f6f3ee', overflow: 'hidden' }, win);
   const ph = el('div', { position: 'absolute', left: '28px', top: '28px', width: '560px', height: '984px', borderRadius: '20px',
-    overflow: 'hidden' }, card, photo(2, 'placeholder · foto caso 01'));
+    overflow: 'hidden' }, card, photo(2, 'placeholder · foto Javi en acción'));
   const R = el('div', { position: 'absolute', left: '640px', top: '64px', right: '56px' }, card);
-  el('div', { font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Caso de éxito · 01');
-  el('div', { font: "700 58px/1.04 'Geist'", letterSpacing: '-.035em', marginTop: '18px' }, R, 'Más leads<br>cualificados,<br>menos ruido.');
+  el('div', { font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Javi Cebrián · Imedes');
+  el('div', { font: "700 58px/1.04 'Geist'", letterSpacing: '-.035em', marginTop: '18px' }, R, 'Comunicación<br>que mueve<br>organizaciones.');
   // metric bar (drawing across)
   el('div', { marginTop: '46px', fontFamily: 'Archivo', fontWeight: 800, fontVariationSettings: "'wdth' 125", fontSize: '112px',
-    lineHeight: 1, letterSpacing: '-.02em' }, R, '+38<span style="font-size:.6em"> %</span>');
+    lineHeight: 1, letterSpacing: '-.02em' }, R, '+20<span style="font-size:.6em"> años</span>');
   const tr = el('div', { position: 'relative', marginTop: '18px', height: '18px', borderRadius: '9px', background: '#e4dfd6' }, R);
   el('div', { position: 'absolute', left: 0, top: 0, bottom: 0, width: '74%', borderRadius: '9px', background: '#0b0b0b' }, tr);
-  el('div', { marginTop: '14px', font: "500 20px 'Geist'", color: 'var(--muted)' }, R, 'leads cualificados en 6 meses · <i>dato provisional</i>');
+  el('div', { marginTop: '14px', font: "500 20px 'Geist'", color: 'var(--muted)' }, R, 'en medios, gabinetes de prensa y agencias');
 
   // segmented control — paint wiping from segment 1 to segment 2
-  el('div', { marginTop: '56px', font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Servicio');
+  el('div', { marginTop: '56px', font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Palanca');
   const seg = el('div', { position: 'relative', marginTop: '14px', height: '76px', borderRadius: '38px', background: '#e9e4db',
     display: 'flex', overflow: 'hidden' }, R);
-  const labels = ['Estrategia', 'Negocio', 'Marca', 'Audiovisual'];
-  const paint = el('div', { position: 'absolute', left: '6px', top: '6px', bottom: '6px', width: '242px', borderRadius: '32px',
+  const labels = ['Comunicación', 'Sostenibilidad', 'IA'];
+  const paint = el('div', { position: 'absolute', left: '6px', top: '6px', bottom: '6px', width: '286px', borderRadius: '32px',
     background: '#0b0b0b' }, seg); // grown from seg 1 to half of seg 2 (spring in flight)
   labels.forEach((t, i) => el('div', { position: 'relative', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
     font: "600 22px 'Geist'", color: i < 1 ? '#f3efe8' : '#2a2825' }, seg, t));
   // clip the label colour with the paint (text swap needs its own mask)
-  const segW = 556, cell = segW / 4;
-  const over = el('div', { position: 'absolute', inset: 0, display: 'flex', clipPath: `inset(6px ${segW - 248}px 6px 6px round 32px)` }, seg);
+  const segW = 556;
+  const over = el('div', { position: 'absolute', inset: 0, display: 'flex', clipPath: `inset(6px ${segW - 292}px 6px 6px round 32px)` }, seg);
   labels.forEach(t => el('div', { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
     font: "600 22px 'Geist'", color: '#f3efe8' }, over, t));
 
-  el('div', { marginTop: '34px', font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Formato');
+  el('div', { marginTop: '34px', font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Reto');
   const chips = el('div', { marginTop: '14px', display: 'flex', gap: '14px' }, R);
-  ['Sprint · 4 semanas', 'Acompañamiento anual'].forEach(t => el('div', { padding: '20px 24px', borderRadius: '30px', whiteSpace: 'nowrap',
+  ['Datos ESG y CSRD', 'Adopción de IA'].forEach(t => el('div', { padding: '20px 24px', borderRadius: '30px', whiteSpace: 'nowrap',
     border: '2px solid #d8d1c5', font: "600 22px 'Geist'" }, chips, t));
 
   // CTA (nav button lands here on beat 42)
   el('div', { marginTop: '50px', height: '96px', borderRadius: '48px', background: '#0b0b0b', color: '#f3efe8', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', font: "600 30px 'Geist'", letterSpacing: '-.01em' }, R, 'Agenda una reunión →');
+    alignItems: 'center', justifyContent: 'center', font: "600 30px 'Geist'", letterSpacing: '-.01em' }, R, 'Hablemos →');
 
   cursor(36 + 56 + 640 + 214, 96 + 210 + 664, 1.25, true);
 },
@@ -295,10 +295,10 @@ wall() {
     height: fh - 2 * (mold + mat) - 70 + 'px', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.08)' });
   el('div', { position: 'absolute', inset: 0, background: portrait(1) }, art);
   el('div', { position: 'absolute', left: '26px', bottom: '22px', color: '#fff', fontFamily: 'Archivo', fontWeight: 800,
-    fontVariationSettings: "'wdth' 125", fontSize: '46px', lineHeight: .95, letterSpacing: '-.01em' }, art, 'Conecta.');
+    fontVariationSettings: "'wdth' 125", fontSize: '46px', lineHeight: .95, letterSpacing: '-.01em' }, art, 'Mueve.');
   el('div', { left: fx + mold + mat + 'px', top: fy + fh - mold - mat - 48 + 'px', width: fw - 2 * (mold + mat) + 'px',
-    display: 'flex', justifyContent: 'space-between', font: "500 18px 'Geist'", color: '#5b574f' }, S,
-    '<span>javicebrian.es</span><span>Campaña · 2026</span>');
+    display: 'flex', flexDirection: 'column', gap: '4px', font: "500 18px 'Geist'", color: '#5b574f' }, S,
+    '<span style="color:#1d1b18;font-weight:600">Comunicación que mueve organizaciones</span><span>javicebrian.es</span>');
 }
 };
 

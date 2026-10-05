@@ -4,28 +4,38 @@
 > Cambio estratégico clave: el arco original vendía un *producto físico* (foto → lámina enmarcada → pedido → pared).
 > Aquí el arco vende un *servicio de alto valor*: **marca personal → web → caso de éxito → reunión agendada → proyecto en marcha → resultado visible en el mundo real**.
 > El vídeo no enseña "una web bonita": enseña el embudo de conversión funcionando.
+>
+> **Posicionamiento real de la web (fuente: javicebrian.es vía buscador, oct. 2026):** «Comunicación que mueve organizaciones».
+> Tres palancas: comunicación estratégica, sostenibilidad/ESG e IA aplicada a la comunicación. Promesa: que el resultado se vea
+> en el negocio, no solo en las intenciones. Más de 20 años en medios, gabinetes de prensa y agencias. Director de Comunicación
+> y Desarrollo de Negocio en Imedes.
 
 ---
 
 ```xml
 <context>
-El vídeo es la pieza de lanzamiento de JaviCebrian.es, la web profesional de Javi Cebrián
-(comunicación estratégica y desarrollo de negocio). Objetivo de negocio: que un directivo o
-institución entienda en 27 segundos qué hace Javi, vea pruebas y pulse "Agenda una reunión".
+El vídeo es la pieza de lanzamiento de JaviCebrian.es, la web profesional de Javi Cebrián, Director de
+Comunicación y Desarrollo de Negocio en Imedes. Claim: «Comunicación que mueve organizaciones». Tres palancas:
+comunicación estratégica (orientada a decisiones, no a calendarios), sostenibilidad/ESG (traducir datos ESG e
+informes CSRD a mensajes comprensibles) e IA aplicada a la comunicación (adopción con criterio: donde ahorra horas
+o multiplica capacidad sin perder la voz). Idea fuerza: decisiones de negocio, no intenciones.
+Objetivo de negocio: que un comité de dirección entienda las tres palancas en 27 segundos y pulse «Hablemos».
 Destino: LinkedIn (feed cuadrado), Instagram, cabecera de la propia web y presentaciones comerciales.
 Todo el texto en pantalla, en español.
 </context>
 
 <inputs>
 Pídeme:
-1. Una palabra para el wordmark (mejor un verbo en imperativo). Propuestas: "Conecta.", "Impulsa.", "Cuenta.", "Mueve.".
+1. Una palabra para el wordmark. Por defecto: "Mueve.", eco directo del claim «Comunicación que mueve organizaciones».
    Alternativa: "Cebrián." si priorizamos recuerdo de marca personal sobre mensaje.
-2. Capturas a 2x de JaviCebrian.es: home (hero), servicios, un caso de éxito y la página de contacto/agenda.
+2. Capturas a 2x de JaviCebrian.es: home (hero), las tres palancas, un artículo del blog y /contacto.
    Más el logo en SVG y la paleta/tipografías de la web si difieren de las de abajo.
 3. De 9 a 12 fotos en alta resolución: retratos de Javi (al menos uno de día y el MISMO encuadre en hora dorada),
    Javi en acción (ponencia, reunión, rodaje, sala de prensa) e imágenes de proyectos/clientes con permiso de uso.
-4. 3 a 5 casos de éxito con UNA cifra cada uno (p. ej. "+38 % leads", "3 instituciones", "1,2 M impactos"). Solo cifras verificables.
-5. Los 3–4 servicios tal como se nombran en la web (p. ej. Estrategia de comunicación · Desarrollo de negocio · Marca personal · Producción audiovisual).
+4. 1 a 3 pruebas con UNA cifra cada una. Por defecto, la verificable de la web: «+20 años en medios, gabinetes y agencias».
+   Si hay casos (p. ej. un informe CSRD convertido en campaña, una adopción de IA que ahorró X horas), su cifra y permiso de uso.
+5. Servicios: fijados desde la web. Comunicación estratégica · Sostenibilidad y ESG · IA aplicada a la comunicación.
+   Confirmar si el video debe mencionar Imedes (marca empleadora) o solo la marca personal.
 6. Pista musical libre de derechos ~120 BPM con drop y breakdown tranquilo (Mixkit, uso comercial gratuito).
 7. Clip de stock gratuito de una pared lisa con sombras de plantas en movimiento (Pexels).
 </inputs>
@@ -50,29 +60,31 @@ genéricas que suben sin dato real y claims sin cifra.
 Apertura — "Quién": el wordmark se comprime en su propio punto como un acordeón. El punto se expande en una píldora negra y
 dentro sube la etiqueta "javicebrian.es". Clic: seis láminas de iris se cierran sobre la etiqueta y se abren de golpe sobre
 el retrato principal de Javi. El círculo pasa a cuadrado y se encoge. Detrás se despliega una cuadrícula como un mapa de
-papel (centro, cruz, esquinas) con fotos de Javi en acción y proyectos; se reordena en un bento con 4 tiles etiquetados
-con los servicios. Un clic hace zoom en un tile y aterriza justo en el drop.
+papel (centro, cruz, esquinas) con fotos de Javi en acción y proyectos; se reordena en un bento con 3 tiles grandes etiquetados
+«Comunicación estratégica», «Sostenibilidad y ESG» e «IA aplicada», rodeados de fotos. Un clic hace zoom en un tile y aterriza justo en el drop.
 
-Cristal — "Cómo": la palabra "Estrategia" aparece en cristal letra a letra y se funde en una gota que se estira hasta formar
-una barra de herramientas de cristal. El icono de ajustes la convierte en un slider. Al arrastrarlo, el retrato pasa de luz
-de día a hora dorada (dos tomas alineadas): metáfora de "misma persona, mejor contada". El tirador sostenido se vuelve una
+Cristal — "Cómo": la palabra "Decisión" aparece en cristal letra a letra y se funde en una gota que se estira hasta formar
+una barra de herramientas de cristal. El icono de ajustes la convierte en un slider. Sus extremos se rotulan «Intención» y «Decisión». Al arrastrarlo, el retrato pasa de luz
+de día a hora dorada (dos tomas alineadas): la idea de la web, «resultados en el negocio, no intenciones». El tirador sostenido se vuelve una
 lente de cristal, sube y se convierte en un orbe; dentro se abre en círculo la foto de un caso de éxito, y el orbe crece
 hasta una pantalla de bloqueo con dígitos de reloj de cristal, la fecha y una notificación de cristal:
-"Nuevo lead · javicebrian.es". La barra de inicio se estira en un reproductor de cristal (la pista del vídeo).
+"Nueva consulta · javicebrian.es". La barra de inicio se estira en un reproductor de cristal (la pista del vídeo).
 
 Escenario — "Dónde": la pantalla de bloqueo se aleja y revela un teléfono, con el bisel creciendo desde el borde.
 La Dynamic Island se estira como líquido, se estrangula, vuela y se expande en una ventana de Mac que se enrolla como una persiana.
 Pulsación larga sobre el fondo de pantalla y arrastre a una pestaña de Safari "javicebrian.es". La página empuja hacia dentro;
-al soltar la imagen, se convierte en el hero real de la home (usar la captura). Scroll: el hero se transforma en la tarjeta
-de un caso de éxito; la cifra clave se dibuja como barra que cruza la tarjeta ("+38 %"). Se elige el servicio en un selector
-segmentado (el color pinta de lado a lado) y la duración (Sprint 4 semanas / Acompañamiento anual); después el botón de la
-navegación vuela hacia abajo y se convierte en "Agenda una reunión".
+al soltar la imagen, se convierte en el hero real de la home (usar la captura). Scroll: el hero se transforma en una
+tarjeta «Comunicación que mueve organizaciones»; la prueba se dibuja como barra que cruza la tarjeta («+20 años en medios,
+gabinetes y agencias»). Se elige la palanca en un selector segmentado (Comunicación / Sostenibilidad / IA; el color pinta de
+lado a lado) y el reto (Datos ESG y CSRD / Adopción de IA); después el «Contacto» de la navegación vuela hacia abajo y se
+convierte en «Hablemos».
 
 Conversión — una sola forma negra que cambia sin parar:
-Solicitud enviada ✓ → Diagnóstico % → Reunión confirmada (un calendario con el día marcándose) → Proyecto en marcha ✓.
+Mensaje enviado ✓ → Diagnóstico % → Reunión confirmada (un calendario con el día marcándose) → Decisión en marcha ✓.
 
-Mundo real — "Resultado": el círculo de "Proyecto en marcha" se expande hasta llenar de negro el encuadre, aguanta un tiempo y
-se encoge hasta convertirse en un cartel enmarcado de una campaña/caso colgado en la pared real del metraje. El mismo iris se
+Mundo real — "Resultado": el círculo de «Decisión en marcha» se expande hasta llenar de negro el encuadre, aguanta un tiempo y
+se encoge hasta convertirse en un cartel enmarcado colgado en la pared real del metraje («Mueve.» y el claim). Las
+sombras de plantas sobre la pared son intencionadas: son la palanca de sostenibilidad hecha imagen. El mismo iris se
 abre sobre el cartel y vuelve a cerrarse. El marco llena la pantalla, se contrae en la píldora → el punto → las letras
 vuelven a saltar con el tiempo de retorno. Último fotograma = primer fotograma (loop perfecto para redes).
 </structure>
