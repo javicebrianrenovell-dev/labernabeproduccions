@@ -9,7 +9,10 @@ El último fotograma es igual al primero.
 | `beat-map.md` | Mapa de los 54 tiempos con la intención de negocio de cada bloque |
 | `film.html` | **La película.** Todo se calcula en `seek(t)` como función pura de `t` |
 | `stills.html`, `stills/` | Los 4 fotogramas de validación iniciales |
-| `out/film.mp4` | Máster de vídeo, sin sonido de momento (ver *Sonido*) |
+| `out/film.mp4` | Máster 1440×1440 a 60 fps, sin sonido de momento (ver *Sonido*) |
+| `out/film-1080.mp4` | 1080×1080 para el feed de LinkedIn e Instagram |
+| `out/film-vertical-9x16.mp4` | 1080×1920 para Reels y Stories (el cuadrado sobre fondo blanco roto) |
+| `out/poster.jpg`, `out/preview.gif` | Imagen fija del primer fotograma para la web, y vista previa ligera |
 | `out/contact-sheet.png` | Un fotograma por tiempo, para revisión |
 | `audio/sfx-cues.json` | Hoja de 58 efectos: tiempo, nombre, búsqueda en Mixkit y ganancia |
 | `tools/` | Render, montaje, control de calidad, mezcla y preparación del metraje |

@@ -178,53 +178,63 @@ function glassFilter(A, scale) {
   DEFS.appendChild(f); return id;
 }
 // x,y: stage position of the shape canvas; draw(ctx,W,H) paints the shape (any colour, alpha = shape)
-function glass(p, { x, y, w, h, draw, key, band = 26, scale = 64, magnify = 1, tint = 'rgba(255,255,255,.10)', scene }) {
+function glass(p, { x, y, w, h, draw, key, band = 26, scale = 64, magnify = 1, tint = 'rgba(255,255,255,.10)', scene, rim = 1 }) {
   const A = glassAssets(key, w, h, draw, band);
   const el = box(p, x, y, A.W, A.H, { maskImage: `url(${A.mask})`, webkitMaskImage: `url(${A.mask})`,
     maskSize: '100% 100%', webkitMaskSize: '100% 100%' });
-  const refr = box(el, 0, 0, A.W, A.H, { overflow: 'hidden', filter: `url(#${glassFilter(A, scale)}) saturate(1.2) brightness(1.04)` });
+  const refr = box(el, 0, 0, A.W, A.H, { overflow: 'hidden', filter: `url(#${glassFilter(A, scale)}) saturate(${1 + .2 * rim}) brightness(${1 + .04 * rim})` });
   const clone = box(refr, -x, -y, 1440, 1440, { transformOrigin: `${x + w / 2}px ${y + h / 2}px`, transform: `scale(${magnify})` });
   scene(clone);
   box(el, 0, 0, A.W, A.H, { background: tint });
-  box(el, 0, 0, A.W, A.H, { backgroundImage: `url(${A.hi})`, backgroundSize: '100% 100%' });
+  box(el, 0, 0, A.W, A.H, { backgroundImage: `url(${A.hi})`, backgroundSize: '100% 100%', opacity: rim });
   return box(el, 0, 0, A.W, A.H);
 }
 const rrDraw = (r) => (g, W, H) => { g.fillStyle = '#000'; g.beginPath(); g.roundRect(1, 1, W - 2, H - 2, Math.min(r, (W - 2) / 2, (H - 2) / 2)); g.fill(); };
 const q = v => Math.round(v * 2) / 2; // cache key quantisation (half pixel)
 
 /* ---------- iris: 6 blades around a hexagonal aperture ----------
-   Each blade = its two aperture vertices + both edge extensions to the housing + the SHORT arc. */
+   Each blade = its two aperture vertices + both edge extensions, closed by the SHORT arc of the housing.
+   Rays are extended past the housing and the blade is clipped by the housing circle, so the geometry
+   stays valid at every aperture (even when the hexagon's vertices leave the housing). */
 function irisPaths(cx, cy, Rr, a, rot) {
   a = Math.max(a, .6);
   const V = [...Array(6)].map((_, i) => { const th = rot + i * Math.PI / 3; return [cx + a * Math.cos(th), cy + a * Math.sin(th)]; });
-  const hit = (p, qq) => {
-    const dx = qq[0] - p[0], dy = qq[1] - p[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
-    const fx = qq[0] - cx, fy = qq[1] - cy, b = fx * ux + fy * uy, c = fx * fx + fy * fy - Rr * Rr;
-    const s = -b + Math.sqrt(Math.max(0, b * b - c)); return [qq[0] + ux * s, qq[1] + uy * s];
-  };
+  const far = (p, qq) => { const dx = qq[0] - p[0], dy = qq[1] - p[1], L = Math.hypot(dx, dy); return [qq[0] + dx / L * 4 * Rr, qq[1] + dy / L * 4 * Rr]; };
   const out = [];
   for (let i = 0; i < 6; i++) {
     const A = V[i], B = V[(i + 1) % 6], Pm = V[(i + 5) % 6];
-    const P = hit(A, B), Q = hit(Pm, A);
-    let dA = Math.atan2(Q[1] - cy, Q[0] - cx) - Math.atan2(P[1] - cy, P[0] - cx);
-    while (dA > Math.PI) dA -= 2 * Math.PI; while (dA < -Math.PI) dA += 2 * Math.PI;
-    out.push(`M${A} L${B} L${P} A${Rr},${Rr} 0 0 ${dA > 0 ? 1 : 0} ${Q} Z`);
+    const P = far(A, B), Q = far(Pm, A); // chord P–Q stays ≥2R from the centre: outside the housing, so the clip draws the short arc
+    out.push(`M${A} L${B} L${P} L${Q} Z`);
   }
   return out;
 }
+let iid = 0;
 function iris(p, cx, cy, Rr, a, rot, clip) {
-  if (a >= Rr / Math.cos(Math.PI / 6) - .5) return;
+  const open = Rr / Math.cos(Math.PI / 6);
+  if (a >= open - .5) return;
+  const k = clamp(a / 40);                      // seams and blade shading vanish as the iris closes fully
+  const seam = 2.5 * k, ringW = 5 * clamp((open - a) / 60);
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('width', 1440); svg.setAttribute('height', 1440); svg.style.left = 0; svg.style.top = 0;
   if (clip) svg.style.clipPath = clip;
+  const id = 'ic' + (iid++);
+  svg.innerHTML = `<defs><clipPath id="${id}"><circle cx="${cx}" cy="${cy}" r="${Rr}"/></clipPath></defs>`;
+  const g = document.createElementNS(NS, 'g'); g.setAttribute('clip-path', `url(#${id})`);
+  const shade = `rgb(${lerp(11, 20, k)},${lerp(11, 20, k)},${lerp(11, 20, k)})`;
+  // solid base under the blades (housing minus aperture) so anti-aliased blade joints never let the image through
+  const base = document.createElementNS(NS, 'path'); base.setAttribute('fill-rule', 'evenodd'); base.setAttribute('fill', INK);
+  const hex = [...Array(6)].map((_, i) => { const th = rot + i * Math.PI / 3, aa = Math.max(a, .6); return `${cx + aa * Math.cos(th)},${cy + aa * Math.sin(th)}`; });
+  base.setAttribute('d', `M${cx - Rr - 2},${cy} a${Rr + 2},${Rr + 2} 0 1,0 ${2 * Rr + 4},0 a${Rr + 2},${Rr + 2} 0 1,0 ${-2 * Rr - 4},0 Z M${hex.join(' L')} Z`);
+  g.appendChild(base);
   irisPaths(cx, cy, Rr, a, rot).forEach((d, i) => {
     const path = document.createElementNS(NS, 'path'); path.setAttribute('d', d);
-    path.setAttribute('fill', i % 2 ? '#141414' : INK); path.setAttribute('stroke', '#38352f');
-    path.setAttribute('stroke-width', 2.5); path.setAttribute('stroke-linejoin', 'round'); svg.appendChild(path);
+    path.setAttribute('fill', i % 2 ? shade : INK); path.setAttribute('stroke', '#38352f');
+    path.setAttribute('stroke-width', seam); path.setAttribute('stroke-linejoin', 'round'); g.appendChild(path);
   });
+  svg.appendChild(g);
   const ring = document.createElementNS(NS, 'circle');
   ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', Rr);
-  ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', INK); ring.setAttribute('stroke-width', 5);
+  ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', INK); ring.setAttribute('stroke-width', ringW);
   svg.appendChild(ring); p.appendChild(svg);
 }
 
@@ -391,8 +401,8 @@ function tileContent(T, key, t, bk) {
   const lh = 46, fs = 40;
   const yb = h - 32 - lines * lh;
   if (key === 'd') {
-    rise(T, 34, yb - 34, 520, 46 + 34, `años en medios, gabinetes y agencias<div style="position:static;font:500 24px/34px Geist;color:#bdb6aa">Javi Cebrián · Imedes</div>`,
-      { font: `600 34px/${lh}px Geist`, color: CANVAS, letterSpacing: '-.02em', whiteSpace: 'normal', width: '520px' }, t, 6.85);
+    rise(T, 34, h - 30 - 120, 540, 120, `años en medios,<br>gabinetes y agencias<div style="position:static;font:500 24px/34px Geist;color:#bdb6aa">Javi Cebrián · Imedes</div>`,
+      { font: `600 34px/42px Geist`, color: CANVAS, letterSpacing: '-.02em', whiteSpace: 'normal', width: '540px' }, t, 6.85);
   } else {
     rise(T, 34, yb, w - 60, lines * lh + 6, LABEL[key], { font: `600 ${fs}px/${lh}px Geist`, color: CANVAS, letterSpacing: '-.02em', whiteSpace: 'normal', width: (w - 60) + 'px' },
       t, 6.8 + ({ u: 0, l: .05, r: .1 }[key]));
@@ -456,7 +466,11 @@ function sceneB(p, t, withPhoto = true) {
     if (wx > 0) box(p, 0, 0, 1440, 1440, { background: portraitBg(1), clipPath: `inset(0 ${1440 - wx}px 0 0)` });
   } else box(p, 0, 0, 1440, 1440, { background: CANVAS });
   const rc = photoCircleR(t);
-  if (withPhoto && rc > 1) box(p, ORB_C[0] - rc, ORB_C[1] - rc, 2 * rc, 2 * rc, { borderRadius: '50%', background: photoBg('action', 2) });
+  if (withPhoto && rc > 1) {
+    const cx = ORB_C[0] - rc, cy = ORB_C[1] - rc;
+    const m = box(p, cx, cy, 2 * rc, 2 * rc, { borderRadius: '50%', overflow: 'hidden' });
+    box(m, -cx, -cy, 1440, 1440, { background: photoBg('action', 2) });
+  }
 }
 let WORDB = null;
 function measureWordB() {
@@ -510,7 +524,7 @@ function segB(t, S) {
     const ck = spring(t - 13.0, { w: 18, z: .9 });
     const kr = R(K.cx - K.d / 2, K.cy - K.d / 2, K.d, K.d, K.d / 2);
     tb = lerpRect(tb, kr, ck);
-    if (ck < .97) {
+    if (ck < .999) {
       const content = glass(S, { x: tb.x, y: tb.y, w: tb.w, h: tb.h, draw: rrDraw(tb.r), key: `tb${q(tb.w)}x${q(tb.h)}r${q(tb.r)}`,
         band: 30, scale: 72, tint: 'rgba(255,255,255,.14)', scene: p => sceneB(p, t) });
       const inner = box(content, 0, 0, TB.w, TB.h, { transformOrigin: '0 0', transform: `scale(${tb.w / TB.w},${tb.h / TB.h})` });
@@ -536,18 +550,20 @@ function segB(t, S) {
   if (t >= 11.2 && t < 14.3) {
     const d = K.d * (t < 11.6 ? K.appear : 1);
     const band = lerp(lerp(34, 50, spring(t - 12.5)), 0, spring(t - 13.5, { w: 14, z: 1 }));
-    const mag = lerp(1, 1.45, spring(t - 12.5, { w: 14, z: .8 }));
+    const relax = spring(t - 13.5, { w: 14, z: 1 });
+    const mag = lerp(lerp(1, 1.45, spring(t - 12.5, { w: 14, z: .8 })), 1, relax);
     if (t < 13.5) {
       if (d > 2) glass(S, { x: K.cx - d / 2, y: K.cy - d / 2, w: d, h: d, draw: rrDraw(d / 2), key: `knob${q(d)}`, band: Math.min(band, d / 2.2), scale: 96,
         magnify: mag, tint: 'rgba(255,255,255,.06)', scene: p => sceneB(p, t) });
     } else {
       // 28 · orb grows into the lock screen (fills the frame)
       const L = lockRect(t);
-      if (band > 1.5) glass(S, { x: L.x, y: L.y, w: L.w, h: L.h, draw: rrDraw(L.r), key: `orb${q(L.w)}x${q(L.h)}r${q(L.r)}b${q(band)}`,
-        band, scale: 96, magnify: mag, tint: 'rgba(255,255,255,.04)', scene: p => sceneB(p, t) });
+      wallpaper(S, t);
+      if (band > .6) glass(S, { x: L.x, y: L.y, w: L.w, h: L.h, draw: rrDraw(L.r), key: `orb${q(L.w)}x${q(L.h)}r${q(L.r)}b${q(band)}`,
+        band, scale: 96 * (1 - relax), magnify: mag, tint: `rgba(255,255,255,${.04 * (1 - relax)})`, rim: 1 - relax, scene: p => { sceneB(p, t); wallpaper(p, t); } });
     }
   }
-  if (t >= 13.5) lockScreen(S, t);
+  if (t >= 13.5) lockScreen(S, t, true);
   drawCursor(S, t, 1.3);
 }
 
@@ -575,15 +591,17 @@ function lk(t, key) {
 }
 function wallpaper(p, t) { // the lock-screen wallpaper (also the scene behind its glass)
   const L = lockRect(t);
-  rbox(p, L, { background: photoBg('action', 2), overflow: 'hidden' });
+  const m = rbox(p, L, { overflow: 'hidden' });
+  const img = lerpRect(R(0, 0, 1440, 1440), L, lockP(t)); // same framing as the orb's photo until the pull-back
+  box(m, img.x - L.x, img.y - L.y, img.w, img.h, { background: photoBg('action', 2) });
 }
 function lockScene(t) { return p => { if (t < 14.25) sceneB(p, t, false); else box(p, 0, 0, 1440, 1440, { background: CANVAS }); wallpaper(p, t); }; }
-function lockScreen(S, t) {
+function lockScreen(S, t, wallDrawn = false) {
   const L = lockRect(t);
   // bezel grows from the screen edge (15.0)
   const b = 18 * spring(t - 15.05, { w: 14, z: .9 });
   if (b > .3) rbox(S, R(L.x - b, L.y - b, L.w + 2 * b, L.h + 2 * b, L.r + b), { background: INK });
-  if (t >= 14.0) wallpaper(S, t);
+  if (t >= 13.5 && !wallDrawn) wallpaper(S, t);
   if (t < 14.0) return;
   const scene = lockScene(t);
   // 29 · date + glass clock digits + notification
@@ -892,7 +910,8 @@ async function segE(t, S) {
     // 49 · the black shrinks into the framed print (molding first, then the mat grows from the art's edge)
     const fr = lerpRect(R(-60, -60, 1560, 1560), FRAME, spring(t - 24.0, { w: 12, z: .86 }));
     const sh = spring(t - 24.0, { w: 12, z: 1 });
-    rbox(cam, fr, { background: '#121212', boxShadow: `${-18 * sh}px ${30 * sh}px ${40 * sh}px rgba(60,40,15,${.28 * sh}), ${-4 * sh}px ${8 * sh}px 10px rgba(60,40,15,${.25 * sh})` });
+    const mc = Math.round(lerp(11, 18, sh));
+    rbox(cam, fr, { background: `rgb(${mc},${mc},${mc})`, boxShadow: `${-18 * sh}px ${30 * sh}px ${40 * sh}px rgba(60,40,15,${.28 * sh}), ${-4 * sh}px ${8 * sh}px 10px rgba(60,40,15,${.25 * sh})` });
     const mk = spring(t - 24.12, { w: 14, z: .85 });
     if (mk > .002) {
       const m = lerpRect(ART, MAT, mk);
@@ -921,7 +940,7 @@ async function segE(t, S) {
    ===================================================================== */
 async function seek(t) {
   t = ((t % DUR) + DUR) % DUR;
-  STAGE.innerHTML = ''; DEFS.innerHTML = ''; fid = 0; gooFilter();
+  STAGE.innerHTML = ''; DEFS.innerHTML = ''; fid = 0; iid = 0; gooFilter();
   STAGE.style.background = CANVAS;
   if (t < 8.0) segA(t, STAGE);
   else if (t < 15.0) segB(t, STAGE);
