@@ -25,8 +25,8 @@ Negocio: marca personal reconocible y las tres palancas de la web: comunicación
 | 12 | 5,5 | Cruz (4 fotos) | — | papel 2 |
 | 13 | 6,0 | Esquinas (8 tiles) | — | papel 3 |
 | 14 | 6,5 | Se reordena en bento: 3 palancas (Comunicación estratégica · Sostenibilidad y ESG · IA aplicada) | — | ticks |
-| 15 | 7,0 | El cursor va a «Comunicación estratégica» | cursor | — |
-| 16 | 7,5 | **Clic**: arranca el zoom de cámara | clic | riser |
+| 15 | 7,0 | El cursor va al retrato de Javi | cursor | — |
+| 16 | 7,5 | **Clic** en el retrato: arranca el zoom de cámara | clic | riser |
 
 ## 2 · Cristal: «Cómo» (tiempos 17–30 · 8,0–15,0 s · DROP)
 Negocio: de la intención a la decisión. Cada mensaje bien contado trae una consulta.

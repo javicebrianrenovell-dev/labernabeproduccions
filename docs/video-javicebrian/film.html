@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mueve. — javicebrian.es</title>
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #111; }
+  #stage { position: relative; width: 1440px; height: 1440px; overflow: hidden; background: #f3efe8;
+           font-family: 'Geist', system-ui, sans-serif; color: #0b0b0b; }
+  #stage div, #stage canvas { position: absolute; box-sizing: border-box; white-space: nowrap; }
+  #stage svg { position: absolute; overflow: visible; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute"><defs id="defs"></defs></svg>
+<script>
+/* =====================================================================
+   JaviCebrian.es · "Mueve." — launch film, one continuous take.
+   Every style is a pure function of t inside seek(t). No CSS transitions,
+   no timers, no state carried between frames (caches are memoisation only).
+   120 BPM · 54 beats · 27 s · last frame = first frame.
+   ===================================================================== */
+const STAGE = document.getElementById('stage');
+const DEFS = document.getElementById('defs');
+const NS = 'http://www.w3.org/2000/svg';
+const DUR = 27, BEAT = 0.5;
+const INK = '#0b0b0b', CANVAS = '#f3efe8', PAPER = '#f6f3ee';
+
+/* ---------- math ---------- */
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = {
+  inOut: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2,
+  out: k => 1 - Math.pow(1 - k, 3),
+  in: k => k * k * k,
+  outQuint: k => 1 - Math.pow(1 - k, 5),
+};
+const tw = (t, t0, d, fn = ease.inOut) => fn(clamp((t - t0) / d));
+// Closed-form step response of a damped spring (0 → 1). w = natural freq (rad/s), z = damping ratio.
+function spring(dt, o = {}) {
+  const w = o.w ?? 16, z = o.z ?? .75;
+  if (dt <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * dt) * (1 + w * dt);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * dt) * (Math.cos(wd * dt) + (z * w / wd) * Math.sin(wd * dt));
+}
+// Value with several targets: one spring per change, so it stays a pure function of t.
+function track(t, v0, steps, o) {
+  let v = v0, prev = v0;
+  for (const s of steps) { v += (s[1] - prev) * spring(t - s[0], s[2] || o); prev = s[1]; }
+  return v;
+}
+const lerpRect = (a, b, k) => ({ x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), w: lerp(a.w, b.w, k), h: lerp(a.h, b.h, k), r: lerp(a.r ?? 0, b.r ?? 0, k) });
+const R = (x, y, w, h, r = 0) => ({ x, y, w, h, r });
+function trackRect(t, r0, steps, o) {
+  const f = k => track(t, r0[k] ?? 0, steps.map(s => [s[0], s[1][k] ?? 0, s[2]]), o);
+  return { x: f('x'), y: f('y'), w: f('w'), h: f('h'), r: Math.max(0, f('r')) };
+}
+
+/* ---------- DOM helpers ---------- */
+function box(p, x, y, w, h, css = {}, html = '') {
+  const e = document.createElement('div');
+  e.style.left = x + 'px'; e.style.top = y + 'px';
+  if (w != null) e.style.width = w + 'px';
+  if (h != null) e.style.height = h + 'px';
+  Object.assign(e.style, css);
+  if (html) e.innerHTML = html;
+  p.appendChild(e); return e;
+}
+const rbox = (p, r, css = {}, html = '') => box(p, r.x, r.y, r.w, r.h, Object.assign({ borderRadius: Math.min(r.r || 0, r.w / 2, r.h / 2) + 'px' }, css), html);
+// Text rising from a mask line (k: 0 hidden below, 1 in place, 2 gone above)
+function riseK(p, x, y, w, h, html, css, k, out = 0) {
+  const m = box(p, x, y, w, h, { overflow: 'hidden' });
+  const ty = (1 - k) * 108 - out * 108;
+  box(m, 0, 0, w, h, Object.assign({ transform: `translateY(${ty}%)` }, css), html);
+  return m;
+}
+const rise = (p, x, y, w, h, html, css, t, t0, o, tOut) =>
+  riseK(p, x, y, w, h, html, css, spring(t - t0, o || { w: 20, z: .82 }), tOut != null ? spring(t - tOut, { w: 22, z: .9 }) : 0);
+
+/* ---------- assets: real files override placeholders automatically ---------- */
+const ASSETS = {
+  portraitDay: 'assets/portrait-day.jpg',   // same framing as portraitGold
+  portraitGold: 'assets/portrait-gold.jpg',
+  action: 'assets/javi-en-accion.jpg',       // orb, lock screen, hero, case card
+  a: 'assets/foto-a.jpg', b: 'assets/foto-b.jpg', c: 'assets/foto-c.jpg', d: 'assets/foto-d.jpg',
+  wall: 'assets/wall.webm',                  // all-intra VP9 (ffmpeg -g 1), see tools/prepare-footage.sh
+};
+const HAVE = {};
+function portraitBg(light) {
+  const key = light > .5 ? 'portraitGold' : 'portraitDay';
+  if (HAVE[key]) return `url(${ASSETS[key]}) center/cover`;
+  const L = (a, b) => a + (b - a) * light;
+  const bgTop = `rgb(${L(214, 236)},${L(219, 170)},${L(222, 98)})`, bgBot = `rgb(${L(176, 160)},${L(184, 86)},${L(190, 44)})`;
+  const skin = `rgb(${L(206, 226)},${L(170, 150)},${L(146, 100)})`, rim = `rgba(255,${L(250, 214)},${L(240, 150)},${L(0, .85)})`;
+  return `radial-gradient(ellipse 13% 17% at 50% 38%, ${skin} 0 96%, transparent 100%),
+    radial-gradient(ellipse 14.2% 18.2% at ${L(50, 51.4)}% 37.6%, ${rim} 0 96%, transparent 100%),
+    radial-gradient(ellipse 30% 22% at 50% 86%, #1d1f24 0 97%, transparent 100%),
+    radial-gradient(ellipse 4.5% 8% at 50% 58%, ${skin} 0 95%, transparent 100%),
+    linear-gradient(${L(160, 200)}deg, ${bgTop}, ${bgBot})`;
+}
+function photoBg(key, seed) {
+  if (HAVE[key]) return `url(${ASSETS[key]}) center/cover`;
+  const hues = [[28, 64, 52], [205, 30, 40], [12, 55, 45], [150, 22, 36], [40, 35, 62], [220, 14, 26], [18, 60, 56], [190, 25, 50]];
+  const [hh, ss, ll] = hues[seed % hues.length];
+  return `radial-gradient(circle at ${30 + seed * 7 % 40}% ${35 + seed * 11 % 30}%, hsl(${hh} ${ss}% ${ll + 18}%) 0, transparent 58%),
+    linear-gradient(${120 + seed * 23}deg, hsl(${hh} ${ss}% ${ll}%), hsl(${(hh + 30) % 360} ${ss}% ${ll - 14}%))`;
+}
+
+/* ---------- liquid glass ----------
+   Each glass element keeps its own clone of the scene behind it. The clone is filtered with an
+   feImage displacement map built from a distance field of the element's own shape (rounded rect,
+   glyphs or goo), through three feDisplacementMaps at slightly different scales (chromatic edge),
+   then a rim light. backdrop-filter:url() misreads displacement maps in Chromium, hence the clone. */
+const gcache = new Map();
+function glassAssets(key, w, h, draw, band) {
+  if (key && gcache.has(key)) return gcache.get(key);
+  const W = Math.max(2, Math.ceil(w)), H = Math.max(2, Math.ceil(h));
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  draw(g, W, H);
+  const im = g.getImageData(0, 0, W, H).data;
+  const N = W * H, d = new Float32Array(N);
+  for (let i = 0; i < N; i++) d[i] = im[i * 4 + 3] > 127 ? 1e9 : 0;
+  const D2 = Math.SQRT2;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {           // chamfer pass 1
+    const i = y * W + x; if (!d[i]) continue;
+    d[i] = Math.min(d[i], x > 0 ? d[i - 1] + 1 : 1, y > 0 ? d[i - W] + 1 : 1,
+      x > 0 && y > 0 ? d[i - W - 1] + D2 : D2, x < W - 1 && y > 0 ? d[i - W + 1] + D2 : D2);
+  }
+  for (let y = H - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) {   // chamfer pass 2
+    const i = y * W + x; if (!d[i]) continue;
+    d[i] = Math.min(d[i], x < W - 1 ? d[i + 1] + 1 : 1, y < H - 1 ? d[i + W] + 1 : 1,
+      x < W - 1 && y < H - 1 ? d[i + W + 1] + D2 : D2, x > 0 && y < H - 1 ? d[i + W - 1] + D2 : D2);
+  }
+  const map = g.createImageData(W, H), hi = g.createImageData(W, H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, o = i * 4, v = d[i];
+    map.data[o + 2] = 128; map.data[o + 3] = 255; map.data[o] = 128; map.data[o + 1] = 128;
+    if (v <= 0) continue;
+    const gx = (x < W - 1 ? d[i + 1] : 0) - (x > 0 ? d[i - 1] : 0);
+    const gy = (y < H - 1 ? d[i + W] : 0) - (y > 0 ? d[i - W] : 0);
+    const L = Math.hypot(gx, gy) || 1, nx = gx / L, ny = gy / L;     // inward unit normal
+    const k = v < band ? Math.pow(1 - v / band, 2) : 0;
+    map.data[o] = 128 + nx * k * 127; map.data[o + 1] = 128 + ny * k * 127; // sample from inside: never outside
+    const lit = .55 * nx + .83 * ny;                                     // 1 on the top-left rim
+    if (v < 4.5) {
+      const e = clamp(1 - (v - 1) / 3.5);
+      const a = e * (.28 + .62 * Math.max(lit, 0) + .32 * Math.max(-lit, 0));
+      hi.data[o] = hi.data[o + 1] = hi.data[o + 2] = 255; hi.data[o + 3] = a * 255;
+    } else if (v < band) {
+      const s = Math.pow(1 - v / band, 3) * .16 * Math.max(-lit, 0);
+      hi.data[o] = 20; hi.data[o + 1] = 16; hi.data[o + 2] = 10; hi.data[o + 3] = s * 255;
+    }
+  }
+  const toURL = id => { const cc = document.createElement('canvas'); cc.width = W; cc.height = H; cc.getContext('2d').putImageData(id, 0, 0); return cc.toDataURL(); };
+  const A = { W, H, mask: c.toDataURL(), map: toURL(map), hi: toURL(hi) };
+  if (key) { if (gcache.size > 400) gcache.clear(); gcache.set(key, A); }
+  return A;
+}
+let fid = 0;
+function glassFilter(A, scale) {
+  const id = 'gf' + (fid++);
+  const f = document.createElementNS(NS, 'filter');
+  f.setAttribute('id', id);
+  for (const [k, v] of [['x', 0], ['y', 0], ['width', A.W], ['height', A.H], ['filterUnits', 'userSpaceOnUse'],
+    ['primitiveUnits', 'userSpaceOnUse'], ['color-interpolation-filters', 'sRGB']]) f.setAttribute(k, v);
+  const ch = [['R', '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0', scale * 1.07],
+              ['G', '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0', scale],
+              ['B', '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0', scale * .93]];
+  f.innerHTML = `<feImage href="${A.map}" x="0" y="0" width="${A.W}" height="${A.H}" result="map" preserveAspectRatio="none"/>` +
+    ch.map(([n, m, s]) => `<feDisplacementMap in="SourceGraphic" in2="map" scale="${s}" xChannelSelector="R" yChannelSelector="G" result="d${n}"/>
+      <feColorMatrix in="d${n}" type="matrix" values="${m}" result="c${n}"/>`).join('') +
+    `<feComposite in="cR" in2="cG" operator="arithmetic" k2="1" k3="1" result="rg"/>
+     <feComposite in="rg" in2="cB" operator="arithmetic" k2="1" k3="1"/>`;
+  DEFS.appendChild(f); return id;
+}
+// x,y: stage position of the shape canvas; draw(ctx,W,H) paints the shape (any colour, alpha = shape)
+function glass(p, { x, y, w, h, draw, key, band = 26, scale = 64, magnify = 1, tint = 'rgba(255,255,255,.10)', scene }) {
+  const A = glassAssets(key, w, h, draw, band);
+  const el = box(p, x, y, A.W, A.H, { maskImage: `url(${A.mask})`, webkitMaskImage: `url(${A.mask})`,
+    maskSize: '100% 100%', webkitMaskSize: '100% 100%' });
+  const refr = box(el, 0, 0, A.W, A.H, { overflow: 'hidden', filter: `url(#${glassFilter(A, scale)}) saturate(1.2) brightness(1.04)` });
+  const clone = box(refr, -x, -y, 1440, 1440, { transformOrigin: `${x + w / 2}px ${y + h / 2}px`, transform: `scale(${magnify})` });
+  scene(clone);
+  box(el, 0, 0, A.W, A.H, { background: tint });
+  box(el, 0, 0, A.W, A.H, { backgroundImage: `url(${A.hi})`, backgroundSize: '100% 100%' });
+  return box(el, 0, 0, A.W, A.H);
+}
+const rrDraw = (r) => (g, W, H) => { g.fillStyle = '#000'; g.beginPath(); g.roundRect(1, 1, W - 2, H - 2, Math.min(r, (W - 2) / 2, (H - 2) / 2)); g.fill(); };
+const q = v => Math.round(v * 2) / 2; // cache key quantisation (half pixel)
+
+/* ---------- iris: 6 blades around a hexagonal aperture ----------
+   Each blade = its two aperture vertices + both edge extensions to the housing + the SHORT arc. */
+function irisPaths(cx, cy, Rr, a, rot) {
+  a = Math.max(a, .6);
+  const V = [...Array(6)].map((_, i) => { const th = rot + i * Math.PI / 3; return [cx + a * Math.cos(th), cy + a * Math.sin(th)]; });
+  const hit = (p, qq) => {
+    const dx = qq[0] - p[0], dy = qq[1] - p[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
+    const fx = qq[0] - cx, fy = qq[1] - cy, b = fx * ux + fy * uy, c = fx * fx + fy * fy - Rr * Rr;
+    const s = -b + Math.sqrt(Math.max(0, b * b - c)); return [qq[0] + ux * s, qq[1] + uy * s];
+  };
+  const out = [];
+  for (let i = 0; i < 6; i++) {
+    const A = V[i], B = V[(i + 1) % 6], Pm = V[(i + 5) % 6];
+    const P = hit(A, B), Q = hit(Pm, A);
+    let dA = Math.atan2(Q[1] - cy, Q[0] - cx) - Math.atan2(P[1] - cy, P[0] - cx);
+    while (dA > Math.PI) dA -= 2 * Math.PI; while (dA < -Math.PI) dA += 2 * Math.PI;
+    out.push(`M${A} L${B} L${P} A${Rr},${Rr} 0 0 ${dA > 0 ? 1 : 0} ${Q} Z`);
+  }
+  return out;
+}
+function iris(p, cx, cy, Rr, a, rot, clip) {
+  if (a >= Rr / Math.cos(Math.PI / 6) - .5) return;
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', 1440); svg.setAttribute('height', 1440); svg.style.left = 0; svg.style.top = 0;
+  if (clip) svg.style.clipPath = clip;
+  irisPaths(cx, cy, Rr, a, rot).forEach((d, i) => {
+    const path = document.createElementNS(NS, 'path'); path.setAttribute('d', d);
+    path.setAttribute('fill', i % 2 ? '#141414' : INK); path.setAttribute('stroke', '#38352f');
+    path.setAttribute('stroke-width', 2.5); path.setAttribute('stroke-linejoin', 'round'); svg.appendChild(path);
+  });
+  const ring = document.createElementNS(NS, 'circle');
+  ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', Rr);
+  ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', INK); ring.setAttribute('stroke-width', 5);
+  svg.appendChild(ring); p.appendChild(svg);
+}
+
+/* ---------- cursor ---------- */
+const CURSOR_SVG = `<svg width="40" height="56" viewBox="0 0 40 56" style="position:static"><path d="M3 3 L3 44 L13 34.5 L20.5 51 L28 47.6 L20.6 31.6 L34 31.6 Z" fill="${INK}" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>`;
+const PRESS = [[3.0, 3.12], [7.5, 7.62], [11.0, 11.12], [11.4, 13.0], [17.5, 18.5], [19.5, 19.62], [20.0, 20.12], [21.0, 21.12], [24.45, 24.57], [24.95, 25.07]];
+const CUR_O = { w: 9, z: .92 };
+const CUR_STEPS = [
+  [2.45, [760, 775]], [3.3, [1010, 1020]], [6.95, [414, 414]], [7.6, [1650, 1650]],
+  [10.8, [284, 1196]], [11.2, [372, 1224]], [11.45, [1180, 1224], { w: 6.2, z: 1 }], [13.05, [1620, 1610]],
+  [17.15, [330, 720]], [17.95, [982, 380], { w: 10, z: .95 }], [18.25, [980, 668], { w: 11, z: .95 }],
+  [18.75, [1030, 960]], [19.0, [1030, 900]], [19.25, [1020, 894]], [19.78, [825, 1048]], [20.55, [1020, 1235]],
+  [21.3, [1650, 1650]], [24.1, [760, 700]], [25.15, [1650, 1600]],
+];
+function cursorAt(t) {
+  const x = track(t, 1650, CUR_STEPS.map(s => [s[0], s[1][0], s[2]]), CUR_O);
+  const y = track(t, 1650, CUR_STEPS.map(s => [s[0], s[1][1], s[2]]), CUR_O);
+  const pressed = PRESS.some(([a, b]) => t >= a && t < b);
+  return { x, y, pressed };
+}
+function drawCursor(p, t, scale) {
+  const c = cursorAt(t);
+  if (c.x > 1500 || c.y > 1500) return c;
+  const s = scale * (c.pressed ? .86 : 1);
+  box(p, c.x - 3 * s, c.y - 3 * s, 40, 56, { transformOrigin: '0 0', transform: `scale(${s})`, zIndex: 50 }, CURSOR_SVG);
+  return c;
+}
+
+/* ---------- wordmark "Mueve." (accordion into its own period) ---------- */
+const WORD = 'Mueve', WSIZE = 280;
+const STRETCHES = [62, 75, 87.5, 100, 112.5, 125];
+let WM = null;
+function measureWordmark() {
+  const host = box(STAGE, 0, 0, null, null, { visibility: 'hidden' });
+  const widths = [...WORD].map(ch => STRETCHES.map(s => {
+    const sp = document.createElement('span'); sp.textContent = ch;
+    Object.assign(sp.style, { font: `800 ${WSIZE}px Archivo`, fontStretch: s + '%', position: 'absolute', whiteSpace: 'pre' });
+    host.appendChild(sp); const w = sp.getBoundingClientRect().width; sp.remove(); return w;
+  }));
+  // baseline offset inside a line box
+  const lb = document.createElement('div');
+  Object.assign(lb.style, { font: `800 ${WSIZE}px Archivo`, fontStretch: '125%', lineHeight: 'normal', position: 'absolute', left: 0, top: 0 });
+  lb.innerHTML = 'M<span style="display:inline-block;width:1px;height:0;vertical-align:baseline"></span>';
+  host.appendChild(lb); const base = lb.lastChild.getBoundingClientRect().top - host.getBoundingClientRect().top;
+  const g = document.createElement('canvas').getContext('2d');
+  g.font = `800 ${WSIZE}px Archivo`; g.fontStretch = 'expanded';
+  const m = g.measureText('.');
+  host.remove();
+  const wE = widths.map(a => a[5]);
+  const dotAdv = m.width, total = wE.reduce((a, b) => a + b, 0) + dotAdv;
+  const x0 = 720 - total / 2, baseline = 720 + WSIZE * .36;
+  const xs = []; let x = x0; for (const w of wE) { xs.push(x); x += w; }
+  const xd = x; // left edge of the period's advance
+  const dot = R(xd - m.actualBoundingBoxLeft, baseline - m.actualBoundingBoxAscent,
+    m.actualBoundingBoxLeft + m.actualBoundingBoxRight, m.actualBoundingBoxAscent + m.actualBoundingBoxDescent, 3);
+  WM = { widths, base, xs, xd, wE, baseline, dot };
+}
+function stretchFor(i, wt) { // invert width(stretch) piecewise-linearly; returns [stretch, residual scaleX]
+  const ws = WM.widths[i];
+  if (wt <= ws[0]) return [62, wt / ws[0]];
+  if (wt >= ws[5]) return [125, wt / ws[5]];
+  for (let j = 0; j < 5; j++) if (wt <= ws[j + 1]) {
+    const k = (wt - ws[j]) / (ws[j + 1] - ws[j]); const s = lerp(STRETCHES[j], STRETCHES[j + 1], k);
+    return [s, wt / lerp(ws[j], ws[j + 1], k)];
+  }
+}
+function drawWordmark(p, k, dotRect) {
+  for (let i = 0; i < WORD.length; i++) {
+    const wt = WM.wE[i] * k; if (wt < .5) continue;
+    const left = WM.xd + (WM.xs[i] - WM.xd) * k;
+    const [s, sx] = stretchFor(i, wt);
+    box(p, left, WM.baseline - WM.base, null, null, { font: `800 ${WSIZE}px Archivo`, fontStretch: s + '%', lineHeight: 'normal',
+      transformOrigin: '0 0', transform: `scaleX(${sx})`, color: INK }, WORD[i]);
+  }
+  rbox(p, dotRect || WM.dot, { background: INK });
+}
+
+/* ---------- shared geometry ---------- */
+const PILL = R(170, 600, 1100, 240, 120);
+const TILE0 = R(570, 570, 300, 300, 22);
+const G = 324; // grid pitch
+const GRID = {
+  c: R(570, 570, 300, 300), u: R(570, 246, 300, 300), r: R(894, 570, 300, 300), d: R(570, 894, 300, 300), l: R(246, 570, 300, 300),
+  tl: R(246, 246, 300, 300), tr: R(894, 246, 300, 300), bl: R(246, 894, 300, 300), br: R(894, 894, 300, 300),
+};
+const BENTO = {
+  c: R(120, 120, 588, 588), u: R(732, 120, 588, 282), r: R(732, 732, 588, 282), d: R(732, 1038, 588, 282), l: R(120, 732, 282, 588),
+  tl: R(732, 426, 282, 282), tr: R(1038, 426, 282, 282), bl: R(426, 732, 282, 282), br: R(426, 1038, 282, 282),
+};
+const ICON = {
+  chat: '<path d="M4 5h16v11H9.5L5 20v-4H4z"/>',
+  leaf: '<path d="M5 19c0-8.5 5.5-13.5 14-14 0 8.5-5 14-14 14z"/><path d="M5 19l7.5-7.5"/>',
+  spark: '<path d="M12 3c.9 5 3.9 8.1 9 9-5.1.9-8.1 4-9 9-.9-5-4-8.1-9-9 5-.9 8.1-4 9-9z"/>',
+  adjust: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
+  crop: '<path d="M7 3v14h14M3 7h14v14"/>',
+  text: '<path d="M5 19L10 5h1l5 14M7 14h7"/>',
+  share: '<path d="M12 15V4M8 8l4-4 4 4M5 12v7h14v-7"/>',
+  play: '<path d="M8 5l11 7-11 7z" fill="currentColor"/>',
+};
+const icon = (name, size, color = '#f3efe8', sw = 1.8) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" style="position:static;color:${color}">${ICON[name]}</svg>`;
+
+/* =====================================================================
+   SEGMENT A · "Quién" · beats 1–16 (0–8 s)
+   ===================================================================== */
+function segA(t, S) {
+  // camera: click on the portrait tile (7.5) zooms it to fill the square exactly on the drop (8.0)
+  const zk = tw(t, 7.5, .5, ease.inOut);
+  const sc = lerp(1, 1440 / 588, zk), f = 414;
+  const tx = (1 - sc) * f + zk * (720 - f);
+  const W = box(S, 0, 0, 1440, 1440, { transformOrigin: '0 0', transform: `translate(${tx}px,${tx}px) scale(${sc})` });
+
+  // 1–3 · wordmark squeezes into its own period (and springs back on beat 54, see segE)
+  if (t < 1.6) drawWordmark(W, clamp(1 - spring(t - .5, { w: 17, z: .9 }), 0, 2), null);
+
+  // 4 · the dot expands into a black pill · 7 · pill tucks inside the iris housing as the blades close
+  if (t >= 1.5 && t < 3.45) {
+    const pr = trackRect(t, WM.dot, [[1.5, PILL, { w: 15, z: .72 }], [3.0, R(390, 600, 660, 240, 120), { w: 18, z: .9 }]]);
+    const pill = rbox(W, pr, { background: INK, overflow: 'hidden' });
+    // 5 · label rises from a mask line inside the pill
+    const lw = 860, lh = 130;
+    rise(pill, (pr.w - lw) / 2, (pr.h - lh) / 2, lw, lh, 'javicebrian.es',
+      { font: "600 104px/130px 'Geist'", letterSpacing: '-.035em', color: CANVAS, textAlign: 'center', width: lw + 'px' }, t, 2.0);
+  }
+  // 8 · iris snaps open onto the portrait · 9 circle → square · 10 shrinks to a tile
+  if (t >= 3.4 && t < 8.0) {
+    // tiles of the paper-map grid → bento
+    drawGrid(W, t);
+  }
+  // 7–8 · the iris
+  if (t >= 3.0 && t < 3.9) {
+    const a = t < 3.5 ? lerp(381, .6, tw(t, 3.0, .38, ease.inOut)) : lerp(.6, 381, tw(t, 3.5, .26, ease.out));
+    iris(W, 720, 720, 330, a, .7 * (1 - a / 381));
+  }
+  // 11 · crease lines draw across the grid (paper map)
+  if (t >= 5.0 && t < 6.9) {
+    const k = spring(t - 5.0, { w: 12, z: 1 }) * (1 - spring(t - 6.5, { w: 18, z: 1 }));
+    const L = 474 * k;
+    for (const v of [558, 882]) {
+      box(W, v - 1, 720 - L, 2, 2 * L, { background: '#d6cdbf' });
+      box(W, 720 - L, v - 1, 2 * L, 2, { background: '#d6cdbf' });
+    }
+  }
+  drawCursor(W, t, 1.3);
+}
+
+function tileContent(T, key, t, bk) {
+  const LABEL = { u: 'Comunicación<br>estratégica', r: 'IA aplicada', l: 'Sosteni-<br>bilidad<br>y ESG', d: '+20 años' };
+  const IC = { u: 'chat', r: 'spark', l: 'leaf' };
+  const w = parseFloat(T.style.width), h = parseFloat(T.style.height);
+  if (key === 'c') { T.style.background = portraitBg(0); return; }
+  if (['tl', 'tr', 'bl', 'br'].includes(key)) { T.style.background = photoBg({ tl: 'a', tr: 'b', bl: 'c', br: 'd' }[key], { tl: 0, tr: 3, bl: 1, br: 6 }[key]); return; }
+  T.style.background = INK;
+  // icons spring up from zero as the tile unfolds, then move to the top-left corner in the bento
+  const ik = spring(t - 5.62 - ({ u: 0, r: .05, d: .1, l: .15 }[key]), { w: 20, z: .55 });
+  const isz = lerp(96, 54, bk), ix = lerp(w / 2 - isz / 2, 34, bk), iy = lerp(h / 2 - isz / 2, 32, bk);
+  if (key === 'd') {
+    box(T, ix - 10, iy, null, isz, { transform: `scale(${ik})`, transformOrigin: 'center', font: `800 ${isz * .62}px/${isz}px Archivo`, fontStretch: '125%', color: CANVAS }, '+20');
+  } else {
+    box(T, ix, iy, isz, isz, { transform: `scale(${ik})` }, icon(IC[key], isz));
+  }
+  // labels rise in the bento
+  const lines = key === 'l' ? 3 : key === 'u' ? 2 : 1;
+  const lh = 46, fs = 40;
+  const yb = h - 32 - lines * lh;
+  if (key === 'd') {
+    rise(T, 34, yb - 34, 520, 46 + 34, `años en medios, gabinetes y agencias<div style="position:static;font:500 24px/34px Geist;color:#bdb6aa">Javi Cebrián · Imedes</div>`,
+      { font: `600 34px/${lh}px Geist`, color: CANVAS, letterSpacing: '-.02em', whiteSpace: 'normal', width: '520px' }, t, 6.85);
+  } else {
+    rise(T, 34, yb, w - 60, lines * lh + 6, LABEL[key], { font: `600 ${fs}px/${lh}px Geist`, color: CANVAS, letterSpacing: '-.02em', whiteSpace: 'normal', width: (w - 60) + 'px' },
+      t, 6.8 + ({ u: 0, l: .05, r: .1 }[key]));
+  }
+}
+
+function drawGrid(W, t) {
+  // centre tile: circle (3.4) → rounded square (4.0) → tile (4.5)
+  const c0 = R(390, 390, 660, 660, 330);
+  let center = trackRect(t, c0, [[4.0, R(390, 390, 660, 660, 44), { w: 16, z: .8 }], [4.5, TILE0, { w: 15, z: .78 }]]);
+  const bk = spring(t - 6.5, { w: 13, z: .8 });
+  const ORDER = ['c', 'u', 'r', 'd', 'l', 'tl', 'tr', 'bl', 'br'];
+  ORDER.forEach((key, i) => {
+    let base = key === 'c' ? center : GRID[key];
+    // unfold: plus tiles hinge on the centre tile (5.5), corners hinge on the up/down tiles (6.0)
+    let sx = 1, sy = 1, origin = 'center';
+    if (key !== 'c') {
+      const t0 = ['u', 'r', 'd', 'l'].includes(key) ? 5.5 + i * .03 : 6.0 + (i - 5) * .03;
+      const u = spring(t - t0, { w: 17, z: .74 });
+      if (u <= 0.001 && bk < .001) return;
+      const hinge = { u: ['center bottom', 'y'], d: ['center top', 'y'], r: ['left center', 'x'], l: ['right center', 'x'],
+        tl: ['right center', 'x'], tr: ['left center', 'x'], bl: ['right center', 'x'], br: ['left center', 'x'] }[key];
+      origin = hinge[0]; if (hinge[1] === 'x') sx = u; else sy = u;
+      sx = lerp(sx, 1, bk); sy = lerp(sy, 1, bk);
+    }
+    const kk = key === 'c' ? spring(t - 6.5, { w: 13, z: .8 }) : spring(t - 6.5 - i * .03, { w: 13, z: .8 });
+    const rr = key === 'c' && t < 6.5 ? base : lerpRect({ ...base, r: base.r ?? 18 }, { ...BENTO[key], r: 24 }, kk);
+    if (key !== 'c' && t < 6.5) rr.r = 18;
+    // 16 · zoom target: portrait corners square up as it fills the frame
+    if (key === 'c') rr.r = lerp(rr.r, 0, tw(t, 7.5, .5));
+    const T = rbox(W, rr, { overflow: 'hidden', transformOrigin: origin, transform: `scale(${sx},${sy})` });
+    tileContent(T, key, t, kk);
+    // paper fold shading while a tile is still folded
+    const fold = Math.min(sx, sy);
+    if (fold < .999) box(T, 0, 0, rr.w, rr.h, { background: `rgba(0,0,0,${(1 - fold) * .35})` });
+  });
+}
+
+/* =====================================================================
+   SEGMENT B · "Cómo" · beats 17–30 (8–15 s) · drop lands at 8.0
+   ===================================================================== */
+const TB = R(200, 1112, 1040, 168, 84);
+const TRACK_L = 370, TRACK_R = 1180, TRACK_Y = 1224;
+const ORB_C = [720, 640];
+function knobState(t) {
+  const c = cursorAt(t);
+  const dragX = t >= 11.4 && t < 13.0 ? clamp(c.x, TRACK_L, TRACK_R) : (t >= 13.0 ? TRACK_R : TRACK_L);
+  const rk = spring(t - 13.0, { w: 11, z: .8 });
+  const d0 = lerp(96, 170, spring(t - 12.5, { w: 16, z: .7 }));
+  const d = lerp(d0, 560, rk);
+  const cx = lerp(dragX, ORB_C[0], rk), cy = lerp(TRACK_Y, ORB_C[1], rk);
+  return { cx, cy, d, appear: spring(t - 11.2, { w: 20, z: .6 }), rk };
+}
+function wipeX(t) { return clamp((knobState(t).cx - TRACK_L) / (TRACK_R - TRACK_L)) * 1440; }
+function photoCircleR(t) { return 250 * spring(t - 13.15, { w: 16, z: .82 }) + 900 * spring(t - 13.5, { w: 14, z: 1 }); }
+// the scene behind every glass element of segment B
+function sceneB(p, t, withPhoto = true) {
+  if (t < 14.25) {
+    box(p, 0, 0, 1440, 1440, { background: portraitBg(0) });
+    const wx = t >= 13.0 ? 1440 : wipeX(t);
+    if (wx > 0) box(p, 0, 0, 1440, 1440, { background: portraitBg(1), clipPath: `inset(0 ${1440 - wx}px 0 0)` });
+  } else box(p, 0, 0, 1440, 1440, { background: CANVAS });
+  const rc = photoCircleR(t);
+  if (withPhoto && rc > 1) box(p, ORB_C[0] - rc, ORB_C[1] - rc, 2 * rc, 2 * rc, { borderRadius: '50%', background: photoBg('action', 2) });
+}
+let WORDB = null;
+function measureWordB() {
+  const g = document.createElement('canvas').getContext('2d');
+  g.font = `800 100px Archivo`; g.fontStretch = 'expanded';
+  const ws = [...'Decisión'].map(ch => g.measureText(ch).width);
+  const tot = ws.reduce((a, b) => a + b, 0);
+  const size = Math.min(230, 1180 / tot * 100);
+  const xs = []; let x = 720 - tot * size / 100 / 2; for (const w of ws) { xs.push(x); x += w * size / 100; }
+  WORDB = { size, xs, ws: ws.map(w => w * size / 100), baseline: 640 };
+}
+function segB(t, S) {
+  sceneB(S, t);
+  // 18–20 · glass word: letters rise one by one, then melt (goo) into a droplet
+  if (t >= 8.4 && t < 10.15) {
+    const { size, xs, ws, baseline } = WORDB;
+    const top = baseline - size * .95, H = size * 1.3, cx = 720, cy = baseline - size * .36;
+    const melt = i => spring(t - 9.5 - i * .02, { w: 13, z: .95 });
+    const dropR = 92 * spring(t - 9.55, { w: 15, z: .72 });
+    const shape = (g, W, Hh) => {
+      g.fillStyle = '#000'; g.font = `800 ${size}px Archivo`; g.fontStretch = 'expanded'; g.textBaseline = 'alphabetic';
+      [...'Decisión'].forEach((ch, i) => {
+        const rk = spring(t - 8.5 - i * .125, { w: 19, z: .78 });
+        if (rk <= 0) return;
+        const m = melt(i), sc = lerp(1, .22, m);
+        const gx = xs[i] + ws[i] / 2, gy = cy;
+        const px = lerp(gx, cx, m) - 120, py = lerp(gy, cy, m) - top;
+        g.save(); g.beginPath(); g.rect(0, 0, W, baseline - top + size * .26); g.clip(); // mask line
+        g.translate(px, py + (1 - rk) * size * 1.05); g.scale(sc, sc);
+        g.fillText(ch, -ws[i] / 2, baseline - cy); g.restore();
+      });
+      if (dropR > .5) { g.beginPath(); g.arc(cx - 120, cy - top, dropR, 0, 7); g.fill(); }
+      if (t >= 9.45) { // goo: blur + alpha threshold, then the source composited on top so glyphs stay sharp
+        const src = document.createElement('canvas'); src.width = W; src.height = Hh; src.getContext('2d').drawImage(g.canvas, 0, 0);
+        g.clearRect(0, 0, W, Hh); g.filter = 'blur(14px)'; g.drawImage(src, 0, 0); g.filter = 'none';
+        const id = g.getImageData(0, 0, W, Hh), dd = id.data;
+        for (let i = 3; i < dd.length; i += 4) dd[i] = clamp((dd[i] - 95) / 28) * 255;
+        g.putImageData(id, 0, 0); g.drawImage(src, 0, 0);
+      }
+    };
+    glass(S, { x: 120, y: top, w: 1200, h: H, draw: shape, band: 22, scale: 58, tint: 'rgba(255,255,255,.16)', scene: p => sceneB(p, t) });
+  }
+  // 21 · droplet stretches into a glass toolbar · 22 icons spring · 23 toolbar → slider
+  const ks = spring(t - 10.0, { w: 12.5, z: .62 }), kv = spring(t - 10.0, { w: 16, z: .82 });
+  const drop = R(720 - 92, WORDB.baseline - WORDB.size * .36 - 92, 184, 184, 92);
+  const K = knobState(t);
+  if (t >= 10.0 && t < 13.6) {
+    let tb = { x: lerp(drop.x, TB.x, ks), w: lerp(drop.w, TB.w, ks), y: lerp(drop.y, TB.y, kv), h: lerp(drop.h, TB.h, kv), r: 84 };
+    tb.r = Math.min(lerp(92, 84, ks), tb.h / 2);
+    // 27 · toolbar collapses into the rising knob
+    const ck = spring(t - 13.0, { w: 18, z: .9 });
+    const kr = R(K.cx - K.d / 2, K.cy - K.d / 2, K.d, K.d, K.d / 2);
+    tb = lerpRect(tb, kr, ck);
+    if (ck < .97) {
+      const content = glass(S, { x: tb.x, y: tb.y, w: tb.w, h: tb.h, draw: rrDraw(tb.r), key: `tb${q(tb.w)}x${q(tb.h)}r${q(tb.r)}`,
+        band: 30, scale: 72, tint: 'rgba(255,255,255,.14)', scene: p => sceneB(p, t) });
+      const inner = box(content, 0, 0, TB.w, TB.h, { transformOrigin: '0 0', transform: `scale(${tb.w / TB.w},${tb.h / TB.h})` });
+      const iconsOut = spring(t - 11.0, { w: 20, z: .9 });
+      [['adjust', 84], ['crop', 324], ['text', 564], ['share', 804]].forEach(([name, x], i) => {
+        let s = spring(t - 10.5 - i * .06, { w: 20, z: .52 });
+        if (i > 0) s *= 1 - iconsOut;
+        if (s <= .001) return;
+        const ix = i === 0 ? 34 : x - 50;
+        box(inner, ix, 34, 100, 100, { borderRadius: '50px', background: i === 0 ? 'rgba(11,11,11,.9)' : 'rgba(11,11,11,.55)',
+          transform: `scale(${s})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }, icon(name, 46));
+      });
+      if (t >= 11.0) {
+        rise(inner, 170, 24, 300, 40, 'Intención', { font: "600 28px/40px Geist", color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.3)' }, t, 11.1);
+        rise(inner, TB.w - 360, 24, 300, 40, 'Decisión', { font: "600 28px/40px Geist", color: '#fff', textAlign: 'right', width: '300px', textShadow: '0 1px 2px rgba(0,0,0,.3)' }, t, 11.15);
+        const tl = (TRACK_R - TRACK_L) * spring(t - 11.05, { w: 14, z: 1 });
+        box(inner, TRACK_L - TB.x, TRACK_Y - TB.y - 4, tl, 8, { borderRadius: '4px', background: 'rgba(255,255,255,.38)' });
+        box(inner, TRACK_L - TB.x, TRACK_Y - TB.y - 4, Math.max(0, Math.min(tl, K.cx - TRACK_L)), 8, { borderRadius: '4px', background: '#fff' });
+      }
+    }
+  }
+  // knob → lens (long-press) → orb
+  if (t >= 11.2 && t < 14.3) {
+    const d = K.d * (t < 11.6 ? K.appear : 1);
+    const band = lerp(lerp(34, 50, spring(t - 12.5)), 0, spring(t - 13.5, { w: 14, z: 1 }));
+    const mag = lerp(1, 1.45, spring(t - 12.5, { w: 14, z: .8 }));
+    if (t < 13.5) {
+      if (d > 2) glass(S, { x: K.cx - d / 2, y: K.cy - d / 2, w: d, h: d, draw: rrDraw(d / 2), key: `knob${q(d)}`, band: Math.min(band, d / 2.2), scale: 96,
+        magnify: mag, tint: 'rgba(255,255,255,.06)', scene: p => sceneB(p, t) });
+    } else {
+      // 28 · orb grows into the lock screen (fills the frame)
+      const L = lockRect(t);
+      if (band > 1.5) glass(S, { x: L.x, y: L.y, w: L.w, h: L.h, draw: rrDraw(L.r), key: `orb${q(L.w)}x${q(L.h)}r${q(L.r)}b${q(band)}`,
+        band, scale: 96, magnify: mag, tint: 'rgba(255,255,255,.04)', scene: p => sceneB(p, t) });
+    }
+  }
+  if (t >= 13.5) lockScreen(S, t);
+  drawCursor(S, t, 1.3);
+}
+
+/* lock screen rect: orb (13.5) → full frame (14.0) → phone screen (15.0) → slides left (15.75) */
+const PHONE = R(520, 287, 400, 866, 56);
+function lockRect(t) {
+  const orb = R(ORB_C[0] - 280, ORB_C[1] - 280, 560, 560, 280);
+  return trackRect(t, orb, [[13.5, R(-10, -10, 1460, 1460, 0), { w: 14, z: 1 }], [15.0, PHONE, { w: 12, z: .86 }],
+    [15.75, R(130, 287, 400, 866, 56), { w: 12, z: .86 }]]);
+}
+const lockP = t => spring(t - 15.0, { w: 12, z: .86 });
+// layout: square (full-frame) vs phone (relative to the 400×866 screen)
+const LK = {
+  date: [R(320, 200, 800, 60), R(50, 58, 300, 22)],
+  clock: [R(220, 260, 1000, 300), R(40, 84, 320, 104)],
+  note: [R(300, 690, 840, 160, 44), R(16, 272, 368, 70, 20)],
+  player: [R(300, 1110, 840, 190, 56), R(16, 694, 368, 83, 26)],
+  home: [R(620, 1396, 200, 12, 6), R(130, 846, 140, 5, 2.5)],
+};
+function lk(t, key) {
+  const [sq, ph] = LK[key], L = lockRect(t), p = lockP(t);
+  const sx = L.w / 400, sy = L.h / 866;
+  const phAbs = R(L.x + ph.x * sx, L.y + ph.y * sy, ph.w * sx, ph.h * sy, ph.r * sx);
+  return { r: lerpRect(sq, phAbs, p), s: lerp(1, phAbs.w / sq.w, p) };
+}
+function wallpaper(p, t) { // the lock-screen wallpaper (also the scene behind its glass)
+  const L = lockRect(t);
+  rbox(p, L, { background: photoBg('action', 2), overflow: 'hidden' });
+}
+function lockScene(t) { return p => { if (t < 14.25) sceneB(p, t, false); else box(p, 0, 0, 1440, 1440, { background: CANVAS }); wallpaper(p, t); }; }
+function lockScreen(S, t) {
+  const L = lockRect(t);
+  // bezel grows from the screen edge (15.0)
+  const b = 18 * spring(t - 15.05, { w: 14, z: .9 });
+  if (b > .3) rbox(S, R(L.x - b, L.y - b, L.w + 2 * b, L.h + 2 * b, L.r + b), { background: INK });
+  if (t >= 14.0) wallpaper(S, t);
+  if (t < 14.0) return;
+  const scene = lockScene(t);
+  // 29 · date + glass clock digits + notification
+  const d = lk(t, 'date');
+  rise(S, d.r.x, d.r.y, d.r.w, d.r.h, 'lunes, 5 de octubre', { font: `600 ${44 * d.s}px/${d.r.h}px Geist`, color: '#fff', textAlign: 'center', width: d.r.w + 'px', textShadow: '0 1px 3px rgba(0,0,0,.25)' }, t, 14.0);
+  const c = lk(t, 'clock'), cs = 300 * c.s, ck = spring(t - 14.0, { w: 18, z: .8 });
+  if (ck > .01) {
+    glass(S, { x: c.r.x, y: c.r.y, w: c.r.w, h: c.r.h, key: `clk${q(c.r.w)}x${q(c.r.h)}k${q(ck * 20)}`, band: Math.max(3, 16 * c.s), scale: 50 * c.s + 6,
+      tint: 'rgba(255,255,255,.22)', scene,
+      draw: (g, W, H) => {
+        g.fillStyle = '#000'; g.font = `800 ${cs}px Archivo`; g.fontStretch = 'expanded'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+        g.save(); g.beginPath(); g.rect(0, 0, W, H * .93); g.clip(); g.fillText('10:24', W / 2, H * .92 + (1 - ck) * H); g.restore();
+      } });
+  }
+  const n = lk(t, 'note'), nk = spring(t - 14.15, { w: 17, z: .7 });
+  if (nk > .01) {
+    const nr = R(n.r.x, n.r.y - (1 - nk) * 60 * n.s, n.r.w, n.r.h, n.r.r);
+    const sc = Math.max(.05, nk);
+    const content = glass(S, { x: nr.x + nr.w * (1 - sc) / 2, y: nr.y + nr.h * (1 - sc) / 2, w: nr.w * sc, h: nr.h * sc, draw: rrDraw(nr.r * sc),
+      key: `note${q(nr.w * sc)}x${q(nr.h * sc)}`, band: 18 * n.s + 3, scale: 40 * n.s + 6, tint: 'rgba(255,255,255,.42)', scene });
+    const inner = box(content, 0, 0, 840, 160, { transformOrigin: '0 0', transform: `scale(${n.s * sc})` });
+    box(inner, 28, 32, 96, 96, { borderRadius: '24px', background: INK, color: CANVAS, font: "800 40px/96px Archivo", fontStretch: '125%', textAlign: 'center', width: '96px' }, 'J.');
+    box(inner, 150, 34, 560, 44, { font: "700 34px/44px Geist", color: INK }, 'javicebrian.es');
+    box(inner, 150, 82, 640, 44, { font: "500 30px/44px Geist", color: '#2b2824' }, 'Nueva consulta · Comité de dirección');
+    box(inner, 720, 36, 90, 40, { font: "500 26px/40px Geist", color: '#57524a', textAlign: 'right', width: '90px' }, 'ahora');
+  }
+  // 30 · home bar stretches into a glass music player
+  const h = lk(t, 'home'), pl = lk(t, 'player'), pk = spring(t - 14.5, { w: 12, z: .7 });
+  const hr = lerpRect(h.r, pl.r, pk);
+  if (pk < .02) rbox(S, hr, { background: '#fff' });
+  else {
+    const content = glass(S, { x: hr.x, y: hr.y, w: hr.w, h: hr.h, draw: rrDraw(hr.r), key: `pl${q(hr.w)}x${q(hr.h)}r${q(hr.r)}`,
+      band: Math.min(22 * pl.s + 3, hr.h / 2.2), scale: 44 * pl.s + 6, tint: `rgba(255,255,255,${lerp(.95, .3, clamp(pk * 1.4))})`, scene });
+    const inner = box(content, 0, 0, 840, 190, { transformOrigin: '0 0', transform: `scale(${hr.w / 840},${hr.h / 190})` });
+    box(inner, 28, 25, 140, 140, { borderRadius: '28px', background: portraitBg(1), transform: `scale(${spring(t - 14.6, { w: 20, z: .6 })})` });
+    rise(inner, 196, 40, 420, 56, 'Mueve.', { font: "800 46px/56px Archivo", fontStretch: '125%', color: INK }, t, 14.65);
+    rise(inner, 196, 98, 460, 44, 'javicebrian.es · Imedes', { font: "500 30px/44px Geist", color: '#2b2824' }, t, 14.7);
+    box(inner, 680, 55, 80, 80, { transform: `scale(${spring(t - 14.72, { w: 20, z: .5 })})` }, icon('play', 80, INK, 1));
+    const bw = 590 * spring(t - 14.75, { w: 14, z: 1 });
+    box(inner, 196, 156, 590, 6, { borderRadius: '3px', background: 'rgba(0,0,0,.15)' });
+    box(inner, 196, 156, bw * .37, 6, { borderRadius: '3px', background: INK });
+  }
+  // dynamic island (part of the phone)
+  if (b > .3) {
+    const sx = L.w / 400;
+    island(S, t, L, sx, b / 18);
+  }
+}
+
+/* =====================================================================
+   SEGMENT C · "Dónde" · beats 31–42 (15–21 s)
+   ===================================================================== */
+const WIN = R(620, 360, 720, 720, 22);
+function island(S, t, L, sx, appear) {
+  if (t >= 16.6) return;
+  const cx = L.x + L.w / 2, y = L.y + 12 * sx + 16 * sx * (1 - appear);
+  const iw = (110 + 46 * Math.sin(Math.PI * tw(t, 15.5, .5, x => x))) * sx * appear, ih = 32 * sx * appear;
+  // 32 · liquid stretch (goo) · 33 · pinches off and flies · 34 · expands into the Mac window (segC)
+  const out = spring(t - 15.5, { w: 9, z: .95 });
+  const fly = tw(t, 16.0, .5, ease.inOut);
+  let bx = cx + out * 230 * sx * (t < 16 ? 1 : 1), by = y + ih / 2;
+  if (t >= 16.0) {
+    const sx0 = bx, sy0 = by, ex = WIN.x + WIN.w / 2, ey = WIN.y + WIN.h / 2;
+    bx = lerp(sx0, ex, fly); by = lerp(sy0, ey, fly) - Math.sin(Math.PI * fly) * 160;
+  }
+  const br = lerp(13 * sx, 24, fly);
+  const goo = box(S, 0, 0, 1440, 1440, { filter: 'url(#goo)' });
+  rbox(goo, R(cx - iw / 2, y, iw, ih, ih / 2), { background: INK });
+  if (t >= 15.5 && t < 16.55) box(goo, bx - br, by - br, 2 * br, 2 * br, { borderRadius: '50%', background: INK });
+}
+function gooFilter() {
+  const f = document.createElementNS(NS, 'filter'); f.setAttribute('id', 'goo');
+  f.setAttribute('x', '-10%'); f.setAttribute('y', '-10%'); f.setAttribute('width', '120%'); f.setAttribute('height', '120%');
+  f.innerHTML = `<feGaussianBlur in="SourceGraphic" stdDeviation="7" result="b"/>
+    <feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="g"/>
+    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>`;
+  DEFS.appendChild(f);
+}
+// window rect: blob → window (16.5) → zoom to fill the frame (18.5 → 19.0)
+function winRect(t) {
+  const blob = R(WIN.x + WIN.w / 2 - 24, WIN.y + WIN.h / 2 - 24, 48, 48, 24);
+  const k = spring(t - 16.5, { w: 13, z: .74 });
+  const r = lerpRect(blob, WIN, k);
+  return lerpRect(r, R(0, 0, 1440, 1440, 0), tw(t, 18.5, .5, ease.inOut));
+}
+// page-space (1440) → screen
+const pageToScreen = (W, p) => R(W.x + p.x * W.w / 1440, W.y + p.y * W.h / 1440, p.w * W.w / 1440, p.h * W.h / 1440, (p.r || 0) * W.w / 1440);
+const TAB2 = R(544, 14, 360, 50, 12);
+const HERO0 = R(56, 206, 1328, 820, 30);
+const CARD = R(56, 206, 1328, 1206, 30);
+const PHOTO1 = R(84, 234, 560, 1150, 20);
+const SEG = R(700, 856, 640, 76, 38);
+const CHIP1 = R(700, 1016, 262, 64, 32), CHIP2 = R(978, 1016, 230, 64, 32);
+const NAVBTN = R(1222, 102, 162, 56, 28), CTA = R(700, 1170, 640, 120, 60);
+
+function segC(t, S, withCursor = true) {
+  box(S, 0, 0, 1440, 1440, { background: CANVAS });
+  // phone (screen content continues from segment B)
+  if (t < 19.0) lockScreen(S, t);
+  if (t >= 16.5) drawWindow(S, t);
+  // 36–38 · long-press the wallpaper, drag it onto the Safari tab, drop it as the hero
+  if (t >= 17.5 && t < 19.0) {
+    const L = lockRect(t), c = cursorAt(t);
+    const lift = spring(t - 17.5, { w: 15, z: .8 });
+    const W = winRect(t);
+    const small = R(c.x - 100, c.y - 120, 200, 260, 18);
+    let r = lerpRect(R(L.x, L.y, L.w, L.h, L.r), small, lift);
+    if (t >= 18.0) r = lerpRect(r, R(c.x - 80, c.y - 100, 160, 208, 16), spring(t - 18.0, { w: 14, z: .9 }));
+    if (t >= 18.5) {
+      const from = R(c.x - 80, c.y - 100, 160, 208, 16); // released here; flies into the hero slot
+      const at = cursorAt(18.5); const f0 = R(at.x - 80, at.y - 100, 160, 208, 16);
+      r = lerpRect(f0, pageToScreen(W, HERO0), tw(t, 18.5, .5, ease.inOut));
+    }
+    rbox(S, r, { background: photoBg('action', 2), boxShadow: `0 ${24 * lift}px ${50 * lift}px rgba(30,20,5,${.28 * lift})` });
+  }
+  if (withCursor) drawCursor(S, t, track(t, 1.3, [[15.2, .95, { w: 8, z: 1 }], [18.5, 1.3, { w: 8, z: 1 }]]));
+}
+
+function drawWindow(S, t) {
+  const W = winRect(t);
+  const win = rbox(S, W, { background: '#fff', overflow: 'hidden', boxShadow: '0 30px 70px rgba(40,30,10,.16), 0 0 0 1px rgba(0,0,0,.05)' });
+  const s = W.w / 1440;
+  const P = box(win, 0, 0, 1440, 1440, { transformOrigin: '0 0', transform: `scale(${s})` });
+  // tab activation (18.25) pushes the landing page in over the new-tab page
+  const push = spring(t - 18.25, { w: 15, z: .9 });
+  if (push < .999) newTabPage(P, -push * 520);
+  if (push > .001) landing(P, t, (1 - push) * 1440);
+  // chrome
+  const bar = box(P, 0, 0, 1440, 78, { background: '#f1eee9', borderBottom: '1px solid #e2ddd4' });
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((col, i) => box(bar, 30 + i * 30, 30, 18, 18, { borderRadius: '9px', background: col }));
+  const active2 = t >= 18.25;
+  const hover2 = t >= 18.05 && t < 18.5;
+  [[R(170, 14, 360, 50, 12), 'Nueva pestaña', !active2], [TAB2, 'javicebrian.es', active2]].forEach(([r, label, on], i) => {
+    const tab = rbox(bar, r, { background: on ? '#fff' : (i === 1 && hover2 ? '#dcd5c9' : '#e6e1d8'), boxShadow: on ? '0 1px 3px rgba(0,0,0,.08)' : 'none',
+      font: "500 22px/50px Geist", color: '#2a2825', paddingLeft: '52px' });
+    box(tab, 20, 16, 18, 18, { borderRadius: '5px', background: i === 1 ? INK : '#bdb5a8' });
+    tab.insertAdjacentText('beforeend', label);
+  });
+  // 35 · black blind rolls up
+  const cover = 1440 * (1 - spring(t - 17.0, { w: 13, z: 1 }));
+  if (cover > .5) {
+    box(P, 0, 0, 1440, cover, { background: INK });
+    box(P, 0, Math.max(0, cover - 26), 1440, 26, { background: '#262420', borderRadius: '13px' });
+  }
+}
+function newTabPage(P, dx) {
+  const pg = box(P, dx, 78, 1440, 1362, { background: '#fff' });
+  box(pg, 120, 150, 600, 40, { font: "700 30px Geist", color: '#2a2825' }, 'Favoritos');
+  for (let i = 0; i < 6; i++) box(pg, 120 + i * 200, 220, 160, 160, { borderRadius: '28px', background: ['#ece7df', '#e4ded3', '#efe9e0'][i % 3] });
+  box(pg, 120, 470, 600, 40, { font: "700 30px Geist", color: '#2a2825' }, 'Informe de privacidad');
+  box(pg, 120, 530, 1200, 160, { borderRadius: '28px', background: '#f3efe8' });
+}
+function landing(P, t, dx) {
+  const pg = box(P, dx, 0, 1440, 1440, { background: '#fff' });
+  // nav
+  box(pg, 56, 108, 400, 44, { font: "800 32px/44px Archivo", fontStretch: '125%', letterSpacing: '-.01em', color: INK }, 'Javi Cebrián.');
+  [['Comunicación', 690], ['Sostenibilidad', 860], ['IA', 1050], ['Blog', 1110]].forEach(([s, x]) =>
+    box(pg, x, 112, null, 36, { font: "500 23px/36px Geist", color: '#4a4741' }, s));
+  // 39 · scroll: hero → case card
+  const sk = spring(t - 19.0, { w: 12, z: .84 });
+  const cardR = lerpRect(HERO0, CARD, sk);
+  rbox(pg, cardR, { background: PAPER });
+  const ph = lerpRect(HERO0, PHOTO1, sk);
+  if (t >= 18.95) rbox(pg, ph, { background: photoBg('action', 2) });
+  else rbox(pg, HERO0, { background: '#ece7df' });
+  // headline: hero caption → right column (transform only: no reflow)
+  const hs = lerp(1, 58 / 84, sk);
+  const hx = lerp(56, 700, sk), hy = lerp(1052, 318, sk);
+  rise(pg, hx, hy, 900, 3 * 88 + 10, 'Comunicación<br>que mueve<br>organizaciones.', { font: "700 84px/88px Geist", letterSpacing: '-.035em', color: INK,
+    transformOrigin: '0 0', transform: `scale(${hs})` }, t, 18.6);
+  if (t >= 19.0) {
+    rise(pg, 700, 262, 600, 32, 'JAVI CEBRIÁN · IMEDES', { font: "600 21px/32px Geist", letterSpacing: '.08em', color: '#6d6a64' }, t, 19.12);
+    rise(pg, 700, 540, 640, 130, '+20<span style="font-size:.6em"> años</span>', { font: "800 112px/130px Archivo", fontStretch: '125%', letterSpacing: '-.02em', color: INK }, t, 19.16);
+    const bw = 640 * spring(t - 19.25, { w: 12, z: 1 });
+    box(pg, 700, 690, bw, 18, { borderRadius: '9px', background: '#e4dfd6' });
+    box(pg, 700, 690, bw * .74, 18, { borderRadius: '9px', background: INK });
+    rise(pg, 700, 722, 640, 32, 'en medios, gabinetes de prensa y agencias', { font: "500 21px/32px Geist", color: '#6d6a64' }, t, 19.3);
+    rise(pg, 700, 818, 300, 32, 'PALANCA', { font: "600 21px/32px Geist", letterSpacing: '.08em', color: '#6d6a64' }, t, 19.3);
+    // segmented control; 40 · click paints "Sostenibilidad" (right edge leads, left edge follows: liquid)
+    const sw = SEG.w * spring(t - 19.3, { w: 15, z: 1 });
+    const seg = rbox(pg, R(SEG.x, SEG.y, sw, SEG.h, 38), { background: '#e9e4db', overflow: 'hidden' });
+    const cell = SEG.w / 3;
+    const pin = spring(t - 19.36, { w: 20, z: .7 });
+    const pl = 6 + cell * spring(t - 19.5, { w: 11, z: .82 }), pr = 6 + cell - 12 + cell * spring(t - 19.5, { w: 19, z: .7 });
+    const pw = (pr - pl) * pin;
+    const labels = ['Comunicación', 'Sostenibilidad', 'IA'];
+    labels.forEach((s, i) => box(seg, i * cell, 0, cell, SEG.h, { font: "600 23px/76px Geist", color: '#2a2825', textAlign: 'center', width: cell + 'px' }, s));
+    box(seg, pl + (pr - pl - pw) / 2, 6, pw, SEG.h - 12, { borderRadius: '32px', background: INK });
+    const over = box(seg, 0, 0, SEG.w, SEG.h, { clipPath: `inset(6px ${SEG.w - pl - pw - (pr - pl - pw) / 2}px 6px ${pl + (pr - pl - pw) / 2}px round 32px)` });
+    labels.forEach((s, i) => box(over, i * cell, 0, cell, SEG.h, { font: "600 23px/76px Geist", color: CANVAS, textAlign: 'center', width: cell + 'px' }, s));
+    // reto chips; 41 · click paints "Datos ESG y CSRD"
+    rise(pg, 700, 978, 300, 32, 'RETO', { font: "600 21px/32px Geist", letterSpacing: '.08em', color: '#6d6a64' }, t, 19.36);
+    [[CHIP1, 'Datos ESG y CSRD'], [CHIP2, 'Adopción de IA']].forEach(([r, s], i) => {
+      const ck = spring(t - 19.4 - i * .05, { w: 18, z: .7 });
+      const chip = rbox(pg, R(r.x, r.y + (1 - ck) * 30, r.w, r.h, 32), { border: '2px solid #d8d1c5', overflow: 'hidden', transform: `scale(${clamp(ck, 0, 1.2)})` });
+      box(chip, 0, 0, r.w - 4, r.h - 4, { font: "600 23px/60px Geist", color: INK, textAlign: 'center', width: (r.w - 4) + 'px' }, s);
+      if (i === 0 && t >= 20.0) {
+        const fw = (r.w - 4) * spring(t - 20.0, { w: 15, z: 1 });
+        const fill = box(chip, 0, 0, fw, r.h - 4, { background: INK, overflow: 'hidden' });
+        box(fill, 0, 0, r.w - 4, r.h - 4, { font: "600 23px/60px Geist", color: CANVAS, textAlign: 'center', width: (r.w - 4) + 'px' }, s);
+      }
+    });
+  }
+  // 42 · nav "Contacto" flies down and becomes "Hablemos →"
+  const fk = spring(t - 20.5, { w: 10, z: .8 }), fy = spring(t - 20.5, { w: 8, z: .9 });
+  const br = { x: lerp(NAVBTN.x, CTA.x, fk), w: lerp(NAVBTN.w, CTA.w, fk), y: lerp(NAVBTN.y, CTA.y, fy), h: lerp(NAVBTN.h, CTA.h, fk), r: lerp(28, 60, fk) };
+  br.y -= Math.sin(Math.PI * clamp(fy)) * 80;
+  if (t < 21.0) {
+    const btn = rbox(pg, br, { background: INK, overflow: 'hidden' });
+    const fs = lerp(22, 34, fk);
+    riseK(btn, 0, 0, br.w, br.h, 'Contacto', { font: `600 ${fs}px/${br.h}px Geist`, color: CANVAS, textAlign: 'center', width: br.w + 'px' }, 1, spring(t - 20.55, { w: 22, z: .9 }));
+    riseK(btn, 0, 0, br.w, br.h, 'Hablemos →', { font: `600 ${fs}px/${br.h}px Geist`, color: CANVAS, textAlign: 'center', width: br.w + 'px' }, spring(t - 20.62, { w: 20, z: .82 }));
+  }
+}
+
+/* =====================================================================
+   SEGMENT D · conversion · beats 43–46 (21–23 s): one black shape keeps changing
+   ===================================================================== */
+const S43 = R(270, 620, 900, 200, 100), S45 = R(370, 400, 700, 640, 56), S46 = R(460, 460, 520, 520, 260);
+function shapeD(t) { return trackRect(t, CTA, [[21.0, S43, { w: 14, z: .78 }], [22.0, S45, { w: 13, z: .8 }], [22.5, S46, { w: 14, z: .78 }]]); }
+function segD(t, S) {
+  // camera: page zooms around the button as it detaches
+  const zk = spring(t - 21.0, { w: 9, z: 1 }), s = lerp(1, 1.45, zk);
+  const f = [CTA.x + CTA.w / 2, CTA.y + CTA.h / 2];
+  const tx = (1 - s) * f[0] + zk * (720 - f[0]), ty = (1 - s) * f[1] + zk * (720 - f[1]);
+  const cam = box(S, 0, 0, 1440, 1440, { transformOrigin: '0 0', transform: `translate(${tx}px,${ty}px) scale(${s})` });
+  if (t < 23.4) landing(cam, t, 0);
+  const r = shapeD(t);
+  // 47 · the circle floods the frame (≈0.3 s, beyond the corners)
+  if (t >= 23.0) {
+    const fr = lerp(260, 1120, tw(t, 23.0, .3, ease.in));
+    rbox(S, R(720 - fr, 720 - fr, 2 * fr, 2 * fr, fr), { background: INK });
+    return;
+  }
+  const sh = rbox(S, r, { background: INK, overflow: 'hidden' });
+  const lx = 0, lw = r.w;
+  // 43 · Mensaje enviado ✓ (own mask: text swaps inside a morphing shape)
+  const st = (html, css, t0, tOut, y = 0, h = r.h) => rise(sh, 0, y, r.w, h, html, Object.assign({ color: CANVAS, textAlign: 'center', width: r.w + 'px' }, css), t, t0, null, tOut);
+  if (t < 21.8) {
+    const dash = 60 * (1 - tw(t, 21.15, .25, ease.out));
+    st(`Mensaje enviado <svg width="56" height="56" viewBox="0 0 24 24" style="position:relative;top:8px" fill="none" stroke="${CANVAS}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5" stroke-dasharray="30" stroke-dashoffset="${dash / 2}"/></svg>`,
+      { font: "600 64px/200px Geist", letterSpacing: '-.03em' }, 21.05, 21.5, (r.h - 200) / 2, 200);
+  }
+  // 44 · Diagnóstico % (bar draws inside the pill)
+  if (t >= 21.5 && t < 22.3) {
+    const pc = Math.round(100 * tw(t, 21.55, .4, ease.inOut));
+    st(`Diagnóstico <span style="font-variant-numeric:tabular-nums;color:#bdb6aa">${pc} %</span>`, { font: "600 60px/150px Geist", letterSpacing: '-.03em' }, 21.55, 22.0, (r.h - 200) / 2 + 10, 150);
+    const bw = (r.w - 160) * tw(t, 21.55, .4, ease.inOut) * (1 - spring(t - 22.0, { w: 20, z: 1 }));
+    box(sh, 80, r.h / 2 + 62, r.w - 160, 8, { borderRadius: '4px', background: '#3a3732' });
+    box(sh, 80, r.h / 2 + 62, bw, 8, { borderRadius: '4px', background: CANVAS });
+  }
+  // 45 · Reunión confirmada (calendar; the day fills)
+  if (t >= 22.0 && t < 22.75) {
+    st('Reunión confirmada', { font: "600 50px/70px Geist", letterSpacing: '-.03em' }, 22.05, 22.5, 52, 70);
+    st('Octubre 2026', { font: "500 28px/40px Geist", color: '#9c958a' }, 22.1, 22.5, 124, 40);
+    const gk = spring(t - 22.1, { w: 16, z: .9 }) * (1 - spring(t - 22.5, { w: 20, z: 1 }));
+    const gx = (r.w - 7 * 76) / 2, gy = 200;
+    for (let i = 0; i < 31; i++) {
+      const col = (i + 3) % 7, row = Math.floor((i + 3) / 7);
+      const day = i + 1, on = day === 15;
+      const fill = on ? spring(t - 22.25, { w: 18, z: .6 }) : 0;
+      const cell = box(sh, gx + col * 76, gy + row * 72 + (1 - gk) * 40, 64, 64, { transform: `scale(${gk})`, borderRadius: '32px' });
+      if (on) box(cell, 0, 0, 64, 64, { borderRadius: '32px', background: CANVAS, transform: `scale(${fill})` });
+      box(cell, 0, 0, 64, 64, { font: "600 26px/64px Geist", textAlign: 'center', width: '64px', color: on && fill > .5 ? INK : '#d9d2c6' }, String(day));
+    }
+  }
+  // 46 · Decisión en marcha ✓
+  if (t >= 22.5) {
+    const ck = spring(t - 22.62, { w: 18, z: .6 });
+    box(sh, r.w / 2 - 70, r.h / 2 - 140, 140, 140, { transform: `scale(${ck})` },
+      `<svg width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="${CANVAS}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="position:static"><path d="M4 12.5l5 5L20 6.5"/></svg>`);
+    st('Decisión<br>en marcha', { font: "600 50px/56px Geist", letterSpacing: '-.03em', whiteSpace: 'normal' }, 22.6, null, r.h / 2 + 10, 120);
+  }
+  drawCursor(S, t, 1.3);
+}
+
+/* =====================================================================
+   SEGMENT E · "Resultado" · beats 47–54 (23–27 s) · breakdown → return beat
+   ===================================================================== */
+const FRAME = R(400, 270, 640, 820, 0), MAT = R(430, 300, 580, 760), ART = R(494, 364, 452, 562);
+let VIDEO = null, VCANVAS = null;
+async function drawWall(S, t) {
+  const c = document.createElement('canvas'); c.width = 1440; c.height = 1440;
+  c.style.left = 0; c.style.top = 0; S.appendChild(c);
+  const g = c.getContext('2d');
+  if (VIDEO) {
+    const vt = clamp(t - 23.5, 0, VIDEO.duration - .05);
+    if (Math.abs(VIDEO.currentTime - vt) > 1e-4) { VIDEO.currentTime = vt; await new Promise(r => VIDEO.addEventListener('seeked', r, { once: true })); }
+    const vw = VIDEO.videoWidth, vh = VIDEO.videoHeight, s = Math.max(1440 / vw, 1440 / vh);
+    g.drawImage(VIDEO, (1440 - vw * s) / 2, (1440 - vh * s) / 2, vw * s, vh * s);
+  } else { g.fillStyle = '#e4d8c6'; g.fillRect(0, 0, 1440, 1440); }
+}
+function artContent(p) {
+  box(p, ART.x, ART.y, ART.w, ART.h, { background: portraitBg(1) });
+  box(p, ART.x + 26, ART.y + ART.h - 76, 400, 56, { font: "800 50px/56px Archivo", fontStretch: '125%', letterSpacing: '-.01em', color: '#fff' }, 'Mueve.');
+}
+async function segE(t, S) {
+  if (t < 24.0) { box(S, 0, 0, 1440, 1440, { background: INK }); return; }
+  // 52 · the frame fills the screen (black art grows past the corners)
+  const fk = tw(t, 25.5, .35, ease.in);
+  const fs = lerp(1, 3.4, fk), fc = [ART.x + ART.w / 2, ART.y + ART.h / 2];
+  const ftx = (1 - fs) * fc[0] + fk * (720 - fc[0]), fty = (1 - fs) * fc[1] + fk * (720 - fc[1]);
+  if (t < 26.0) {
+    await drawWall(S, t);
+    const cam = box(S, 0, 0, 1440, 1440, { transformOrigin: '0 0', transform: `translate(${ftx}px,${fty}px) scale(${fs})` });
+    // 49 · the black shrinks into the framed print (molding first, then the mat grows from the art's edge)
+    const fr = lerpRect(R(-60, -60, 1560, 1560), FRAME, spring(t - 24.0, { w: 12, z: .86 }));
+    const sh = spring(t - 24.0, { w: 12, z: 1 });
+    rbox(cam, fr, { background: '#121212', boxShadow: `${-18 * sh}px ${30 * sh}px ${40 * sh}px rgba(60,40,15,${.28 * sh}), ${-4 * sh}px ${8 * sh}px 10px rgba(60,40,15,${.25 * sh})` });
+    const mk = spring(t - 24.12, { w: 14, z: .85 });
+    if (mk > .002) {
+      const m = lerpRect(ART, MAT, mk);
+      rbox(cam, m, { background: '#faf8f3', boxShadow: 'inset 3px 4px 8px rgba(0,0,0,.18)' });
+      rise(cam, ART.x, ART.y + ART.h + 18, ART.w, 30, 'Comunicación que mueve organizaciones', { font: "600 19px/30px Geist", color: '#1d1b18' }, t, 24.3);
+      rise(cam, ART.x, ART.y + ART.h + 46, ART.w, 30, 'javicebrian.es · Imedes', { font: "500 18px/30px Geist", color: '#5b574f' }, t, 24.36);
+    }
+    artContent(cam);
+    // 50 · iris opens on the print · 51 · closes again
+    const Rr = Math.hypot(ART.w, ART.h) / 2, open = Rr / Math.cos(Math.PI / 6);
+    let a = .6;
+    if (t >= 24.5 && t < 25.0) a = lerp(.6, open, tw(t, 24.5, .28, ease.out));
+    if (t >= 25.0) a = lerp(open, .6, tw(t, 25.0, .3, ease.inOut));
+    iris(cam, fc[0], fc[1], Rr, a, .7 * (1 - a / open), `inset(${ART.y}px ${1440 - ART.x - ART.w}px ${1440 - ART.y - ART.h}px ${ART.x}px)`);
+    drawCursor(S, t, 1.3);
+    return;
+  }
+  // 53 · black → pill → dot · 54 · letters spring back out (= frame 1)
+  const r = trackRect(t, R(-60, -60, 1560, 1560, 0), [[26.0, PILL, { w: 20, z: .9 }], [26.25, WM.dot, { w: 22, z: .95 }]]);
+  if (t < 26.5) rbox(S, r, { background: INK });
+  else drawWordmark(S, spring(t - 26.5, { w: 21, z: .8 }), r);
+}
+
+/* =====================================================================
+   seek(t): the only entry point. Pure function of t.
+   ===================================================================== */
+async function seek(t) {
+  t = ((t % DUR) + DUR) % DUR;
+  STAGE.innerHTML = ''; DEFS.innerHTML = ''; fid = 0; gooFilter();
+  STAGE.style.background = CANVAS;
+  if (t < 8.0) segA(t, STAGE);
+  else if (t < 15.0) segB(t, STAGE);
+  else if (t < 21.0) segC(t, STAGE);
+  else if (t < 23.5 || (t < 24.0)) segD(t, STAGE);
+  else await segE(t, STAGE);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+}
+window.seek = seek;
+
+window.ready = (async () => {
+  await document.fonts.load("800 100px Archivo"); await document.fonts.load("600 40px Geist"); await document.fonts.load("500 40px Geist");
+  await document.fonts.load("700 40px Geist"); await document.fonts.ready;
+  await Promise.all(Object.entries(ASSETS).map(async ([k, u]) => {
+    try { const r = await fetch(u, { method: 'HEAD' }); HAVE[k] = r.ok; } catch { HAVE[k] = false; }
+  }));
+  if (HAVE.wall) { // footage as a blob URL (python http.server can't range-seek), then seek + await "seeked" per frame
+    const blob = await (await fetch(ASSETS.wall)).blob();
+    VIDEO = document.createElement('video'); VIDEO.muted = true; VIDEO.preload = 'auto'; VIDEO.src = URL.createObjectURL(blob);
+    const ok = await Promise.race([new Promise(r => VIDEO.addEventListener('loadeddata', () => r(true), { once: true })),
+      new Promise(r => setTimeout(() => r(false), 15000))]);
+    if (!ok) { console.error('wall footage failed to decode (use VP9/WebM: Chromium builds may lack H.264)'); VIDEO = null; }
+  }
+  measureWordmark(); measureWordB();
+  const q0 = new URLSearchParams(location.search).get('t');
+  await seek(q0 ? parseFloat(q0) : 0);
+  return true;
+})();
+</script>
+</body>
+</html>

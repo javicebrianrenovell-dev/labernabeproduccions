@@ -1,0 +1,400 @@
+{
+ "note": "Cada evento se coloca para que el PICO MEDIDO del archivo caiga en 'at' (segundos de película). Descarga un SFX por nombre desde Mixkit (licencia gratuita, uso comercial) y guárdalo como audio/sfx/<name>.wav|.mp3. Nunca sintetizados.",
+ "song": {
+  "file": "audio/song.(mp3|wav)",
+  "bpm": 120,
+  "film_t0_in_song_s": "segundo de la canción que cae en t=0 (un downbeat, 8 s antes del drop)",
+  "drop_at_film_s": 8.0,
+  "breakdown_film_s": [
+   23.0,
+   26.0
+  ],
+  "return_beat_film_s": 26.5
+ },
+ "library": {
+  "whoosh-short": {
+   "mixkit_search": "fast whoosh",
+   "gain_db": -8
+  },
+  "tick": {
+   "mixkit_search": "ui tick",
+   "gain_db": -10
+  },
+  "pop-low": {
+   "mixkit_search": "bubble pop",
+   "gain_db": -8
+  },
+  "click": {
+   "mixkit_search": "mouse click",
+   "gain_db": -6
+  },
+  "shutter-close": {
+   "mixkit_search": "camera shutter",
+   "gain_db": -6
+  },
+  "shutter-open": {
+   "mixkit_search": "camera shutter",
+   "gain_db": -8
+  },
+  "paper": {
+   "mixkit_search": "paper fold",
+   "gain_db": -6
+  },
+  "ticks": {
+   "mixkit_search": "soft tick",
+   "gain_db": -12
+  },
+  "riser": {
+   "mixkit_search": "short riser",
+   "gain_db": -10
+  },
+  "impact": {
+   "mixkit_search": "cinematic impact",
+   "gain_db": -4
+  },
+  "glass-tick": {
+   "mixkit_search": "glass tap",
+   "gain_db": -14
+  },
+  "droplet": {
+   "mixkit_search": "water drop",
+   "gain_db": -8
+  },
+  "stretch": {
+   "mixkit_search": "rubber stretch",
+   "gain_db": -10
+  },
+  "pop": {
+   "mixkit_search": "pop",
+   "gain_db": -10
+  },
+  "slide": {
+   "mixkit_search": "slider",
+   "gain_db": -12
+  },
+  "haptic": {
+   "mixkit_search": "haptic tap",
+   "gain_db": -10
+  },
+  "whoosh": {
+   "mixkit_search": "whoosh",
+   "gain_db": -9
+  },
+  "notification": {
+   "mixkit_search": "notification",
+   "gain_db": -6
+  },
+  "blind": {
+   "mixkit_search": "blinds roll",
+   "gain_db": -8
+  },
+  "thump": {
+   "mixkit_search": "soft thump",
+   "gain_db": -6
+  },
+  "scroll": {
+   "mixkit_search": "scroll wheel",
+   "gain_db": -12
+  },
+  "confirm": {
+   "mixkit_search": "positive confirmation",
+   "gain_db": -7
+  },
+  "sub-drop": {
+   "mixkit_search": "sub drop",
+   "gain_db": -4
+  }
+ },
+ "cues": [
+  {
+   "beat": 2,
+   "at": 0.5,
+   "sfx": "whoosh-short"
+  },
+  {
+   "beat": 3,
+   "at": 1.0,
+   "sfx": "tick"
+  },
+  {
+   "beat": 4,
+   "at": 1.5,
+   "sfx": "pop-low"
+  },
+  {
+   "beat": 7,
+   "at": 3.0,
+   "sfx": "click"
+  },
+  {
+   "beat": 7,
+   "at": 3.02,
+   "sfx": "shutter-close"
+  },
+  {
+   "beat": 8,
+   "at": 3.5,
+   "sfx": "shutter-open"
+  },
+  {
+   "beat": 11,
+   "at": 5.0,
+   "sfx": "paper"
+  },
+  {
+   "beat": 12,
+   "at": 5.5,
+   "sfx": "paper"
+  },
+  {
+   "beat": 13,
+   "at": 6.0,
+   "sfx": "paper"
+  },
+  {
+   "beat": 14,
+   "at": 6.5,
+   "sfx": "ticks"
+  },
+  {
+   "beat": 16,
+   "at": 7.5,
+   "sfx": "click"
+  },
+  {
+   "beat": 16,
+   "at": 8.0,
+   "sfx": "riser"
+  },
+  {
+   "beat": 17,
+   "at": 8.0,
+   "sfx": "impact"
+  },
+  {
+   "beat": 18,
+   "at": 8.5,
+   "sfx": "glass-tick"
+  },
+  {
+   "beat": 18,
+   "at": 8.625,
+   "sfx": "glass-tick"
+  },
+  {
+   "beat": 18,
+   "at": 8.75,
+   "sfx": "glass-tick"
+  },
+  {
+   "beat": 18,
+   "at": 8.875,
+   "sfx": "glass-tick"
+  },
+  {
+   "beat": 19,
+   "at": 9.0,
+   "sfx": "glass-tick"
+  },
+  {
+   "beat": 19,
+   "at": 9.125,
+   "sfx": "glass-tick"
+  },
+  {
+   "beat": 19,
+   "at": 9.25,
+   "sfx": "glass-tick"
+  },
+  {
+   "beat": 19,
+   "at": 9.375,
+   "sfx": "glass-tick"
+  },
+  {
+   "beat": 20,
+   "at": 9.5,
+   "sfx": "droplet"
+  },
+  {
+   "beat": 21,
+   "at": 10.0,
+   "sfx": "stretch"
+  },
+  {
+   "beat": 22,
+   "at": 10.5,
+   "sfx": "pop"
+  },
+  {
+   "beat": 22,
+   "at": 10.56,
+   "sfx": "pop"
+  },
+  {
+   "beat": 22,
+   "at": 10.62,
+   "sfx": "pop"
+  },
+  {
+   "beat": 22,
+   "at": 10.68,
+   "sfx": "pop"
+  },
+  {
+   "beat": 23,
+   "at": 11.0,
+   "sfx": "click"
+  },
+  {
+   "beat": 24,
+   "at": 11.5,
+   "sfx": "slide"
+  },
+  {
+   "beat": 26,
+   "at": 12.5,
+   "sfx": "haptic"
+  },
+  {
+   "beat": 27,
+   "at": 13.0,
+   "sfx": "whoosh"
+  },
+  {
+   "beat": 29,
+   "at": 14.15,
+   "sfx": "notification"
+  },
+  {
+   "beat": 30,
+   "at": 14.5,
+   "sfx": "stretch"
+  },
+  {
+   "beat": 32,
+   "at": 15.5,
+   "sfx": "stretch"
+  },
+  {
+   "beat": 33,
+   "at": 16.0,
+   "sfx": "whoosh"
+  },
+  {
+   "beat": 34,
+   "at": 16.5,
+   "sfx": "pop"
+  },
+  {
+   "beat": 35,
+   "at": 17.0,
+   "sfx": "blind"
+  },
+  {
+   "beat": 36,
+   "at": 17.5,
+   "sfx": "haptic"
+  },
+  {
+   "beat": 38,
+   "at": 18.5,
+   "sfx": "thump"
+  },
+  {
+   "beat": 39,
+   "at": 19.0,
+   "sfx": "scroll"
+  },
+  {
+   "beat": 40,
+   "at": 19.5,
+   "sfx": "click"
+  },
+  {
+   "beat": 41,
+   "at": 20.0,
+   "sfx": "click"
+  },
+  {
+   "beat": 42,
+   "at": 20.5,
+   "sfx": "whoosh"
+  },
+  {
+   "beat": 43,
+   "at": 21.0,
+   "sfx": "click"
+  },
+  {
+   "beat": 43,
+   "at": 21.05,
+   "sfx": "confirm"
+  },
+  {
+   "beat": 44,
+   "at": 21.55,
+   "sfx": "tick"
+  },
+  {
+   "beat": 44,
+   "at": 21.65,
+   "sfx": "tick"
+  },
+  {
+   "beat": 44,
+   "at": 21.75,
+   "sfx": "tick"
+  },
+  {
+   "beat": 44,
+   "at": 21.85,
+   "sfx": "tick"
+  },
+  {
+   "beat": 45,
+   "at": 22.25,
+   "sfx": "tick"
+  },
+  {
+   "beat": 46,
+   "at": 22.62,
+   "sfx": "confirm"
+  },
+  {
+   "beat": 47,
+   "at": 23.0,
+   "sfx": "sub-drop"
+  },
+  {
+   "beat": 50,
+   "at": 24.45,
+   "sfx": "click"
+  },
+  {
+   "beat": 50,
+   "at": 24.5,
+   "sfx": "shutter-open"
+  },
+  {
+   "beat": 51,
+   "at": 24.95,
+   "sfx": "click"
+  },
+  {
+   "beat": 51,
+   "at": 25.0,
+   "sfx": "shutter-close"
+  },
+  {
+   "beat": 53,
+   "at": 26.25,
+   "sfx": "tick"
+  },
+  {
+   "beat": 54,
+   "at": 26.5,
+   "sfx": "pop-low"
+  }
+ ]
+}
