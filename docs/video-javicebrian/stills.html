@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>JaviCebrian.es — stills</title>
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+  :root { --canvas:#f3efe8; --ink:#0b0b0b; --muted:#6d6a64; }
+  html,body { margin:0; background:#222; }
+  #stage { position:relative; width:1440px; height:1440px; overflow:hidden; background:var(--canvas);
+           font-family:'Geist',system-ui,sans-serif; color:var(--ink); }
+  .abs { position:absolute; }
+  .ph-tag { position:absolute; left:18px; bottom:14px; font:500 15px 'Geist'; letter-spacing:.04em;
+            color:rgba(255,255,255,.85); text-transform:uppercase; }
+  .glass { position:absolute; overflow:hidden; isolation:isolate; }
+  .glass > .refr { position:absolute; inset:0; overflow:hidden; }
+  .glass > .tint { position:absolute; inset:0; pointer-events:none; }
+  .glass > .content { position:absolute; inset:0; }
+  .cursor { position:absolute; transform-origin:0 0; z-index:50; }
+  .ar { font-family:'Archivo'; font-weight:800; font-variation-settings:'wdth' 125; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute"><defs id="defs"></defs></svg>
+<script>
+const S = document.getElementById('stage');
+const defs = document.getElementById('defs');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, css = {}, parent = S, html = '') => {
+  const e = document.createElement(tag);
+  if (!css.position && ['left', 'top', 'right', 'bottom', 'inset'].some(k => k in css)) e.style.position = 'absolute';
+  Object.assign(e.style, css);
+  if (html) e.innerHTML = html; parent.appendChild(e); return e;
+};
+
+/* ---------- Placeholder photos (stand-ins until the real shots arrive) ---------- */
+function portrait(light) { // light: 0 = day, 1 = golden hour. Same framing in both → aligned shots
+  const L = (a, b) => a + (b - a) * light;
+  const bgTop = `rgb(${L(214,236)},${L(219,170)},${L(222,98)})`;
+  const bgBot = `rgb(${L(176,160)},${L(184,86)},${L(190,44)})`;
+  const skin  = `rgb(${L(206,226)},${L(170,150)},${L(146,100)})`;
+  const rim   = `rgba(255,${L(250,214)},${L(240,150)},${L(.0,.85)})`;
+  return `
+    radial-gradient(ellipse 13% 17% at 50% 38%, ${skin} 0 96%, transparent 100%),
+    radial-gradient(ellipse 14.2% 18.2% at ${L(50,51.4)}% 37.6%, ${rim} 0 96%, transparent 100%),
+    radial-gradient(ellipse 30% 22% at 50% 86%, #1d1f24 0 97%, transparent 100%),
+    radial-gradient(ellipse 4.5% 8% at 50% 58%, ${skin} 0 95%, transparent 100%),
+    linear-gradient(${L(160,200)}deg, ${bgTop}, ${bgBot})`;
+}
+function photo(seed, label, w, h) { // abstract "project" photo placeholder
+  const hues = [[28,64,52],[205,30,40],[12,55,45],[150,18,38],[40,35,70],[220,12,22],[18,70,60],[190,25,55]];
+  const [hh, ss, ll] = hues[seed % hues.length];
+  return `<div style="position:absolute;inset:0;background:
+      radial-gradient(circle at ${30+seed*7%40}% ${35+seed*11%30}%, hsl(${hh} ${ss}% ${ll+18}%) 0, transparent 55%),
+      linear-gradient(${120+seed*23}deg, hsl(${hh} ${ss}% ${ll}%), hsl(${(hh+30)%360} ${ss}% ${ll-14}%))"></div>
+      <div class="ph-tag">${label}</div>`;
+}
+
+/* ---------- Cursor (scales with camera zoom) ---------- */
+function cursor(x, y, scale = 1, pressed = false) {
+  const c = el('div', { left: x + 'px', top: y + 'px', transform: `scale(${scale * (pressed ? .88 : 1)})` });
+  c.className = 'cursor';
+  c.innerHTML = `<svg width="40" height="56" viewBox="0 0 40 56"><path d="M3 3 L3 44 L13 34.5 L20.5 51 L28 47.6 L20.6 31.6 L34 31.6 Z"
+    fill="#0b0b0b" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>`;
+  return c;
+}
+
+/* ---------- Liquid glass: per-element scene clone + SDF displacement, 3 channels ---------- */
+let gid = 0;
+function dispMap(w, h, r, band, power = 2) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); const img = g.createImageData(w, h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    // signed distance to rounded-rect edge (negative inside)
+    const px = x + .5 - w / 2, py = y + .5 - h / 2;
+    const qx = Math.abs(px) - (w / 2 - r), qy = Math.abs(py) - (h / 2 - r);
+    const out = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+    const d = -out; // distance inside
+    let k = d < band ? Math.pow(1 - Math.max(d, 0) / band, power) : 0;
+    // outward normal; the map points inward so the rim samples from inside the glass (never outside)
+    let nx = qx > 0 ? qx : 0, ny = qy > 0 ? qy : 0;
+    if (qx <= 0 && qy <= 0) { if (qx > qy) nx = 1; else ny = 1; }
+    const nl = Math.hypot(nx, ny) || 1; nx = nx / nl * Math.sign(px || 1); ny = ny / nl * Math.sign(py || 1);
+    const i = (y * w + x) * 4;
+    img.data[i] = 128 - nx * k * 127; img.data[i + 1] = 128 - ny * k * 127; img.data[i + 2] = 128; img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0); return c.toDataURL();
+}
+function glassFilter(w, h, r, band, scale) {
+  const id = 'g' + (gid++);
+  const f = document.createElementNS(NS, 'filter');
+  f.setAttribute('id', id); f.setAttribute('x', 0); f.setAttribute('y', 0);
+  f.setAttribute('width', w); f.setAttribute('height', h);
+  f.setAttribute('filterUnits', 'userSpaceOnUse'); f.setAttribute('primitiveUnits', 'userSpaceOnUse');
+  f.setAttribute('color-interpolation-filters', 'sRGB');
+  const href = dispMap(w, h, r, band);
+  const ch = [['R', '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0', scale * 1.06],
+              ['G', '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0', scale],
+              ['B', '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0', scale * .94]];
+  f.innerHTML = `<feImage href="${href}" x="0" y="0" width="${w}" height="${h}" result="map" preserveAspectRatio="none"/>` +
+    ch.map(([n, m, s]) => `<feDisplacementMap in="SourceGraphic" in2="map" scale="${s}" xChannelSelector="R" yChannelSelector="G" result="d${n}"/>
+      <feColorMatrix in="d${n}" type="matrix" values="${m}" result="c${n}"/>`).join('') +
+    `<feComposite in="cR" in2="cG" operator="arithmetic" k2="1" k3="1" result="rg"/>
+     <feComposite in="rg" in2="cB" operator="arithmetic" k2="1" k3="1"/>`;
+  defs.appendChild(f); return id;
+}
+// sceneFn(parent) must draw the backdrop at stage coordinates; glass clones it and offsets.
+function glass({ x, y, w, h, r, band = 34, scale = 70, magnify = 1, tint = 'rgba(255,255,255,.14)', sceneFn, shadow = true }) {
+  const g = el('div', { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', borderRadius: r + 'px' });
+  g.className = 'glass';
+  if (shadow) g.style.boxShadow = '0 18px 40px rgba(0,0,0,.18), 0 2px 6px rgba(0,0,0,.10)';
+  const refr = el('div', { filter: `url(#${glassFilter(w, h, r, band, scale)}) saturate(1.25) brightness(1.05)` }, g);
+  refr.className = 'refr';
+  const clone = el('div', { position: 'absolute', left: -x + 'px', top: -y + 'px', width: '1440px', height: '1440px',
+    transformOrigin: `${x + w / 2}px ${y + h / 2}px`, transform: `scale(${magnify})` }, refr);
+  sceneFn(clone);
+  const t = el('div', { background: tint, borderRadius: r + 'px',
+    boxShadow: `inset 0 0 0 1.5px rgba(255,255,255,.55), inset 2px 3px 1px -1px rgba(255,255,255,.85),
+                inset -2px -3px 2px -1px rgba(255,255,255,.35), inset 0 -10px 24px -14px rgba(0,0,0,.25)` }, g);
+  t.className = 'tint';
+  const c = el('div', {}, g); c.className = 'content';
+  return c;
+}
+
+/* ---------- Iris: 6 blades around a hexagonal aperture ---------- */
+function irisPath(cx, cy, R, a, rot) { // a = aperture circumradius, rot = hexagon rotation
+  const V = [...Array(6)].map((_, i) => { const t = rot + i * Math.PI / 3; return [cx + a * Math.cos(t), cy + a * Math.sin(t)]; });
+  const hit = (p, q) => { // extend ray p→q beyond q to the circle
+    const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
+    const fx = q[0] - cx, fy = q[1] - cy, b = fx * ux + fy * uy, c = fx * fx + fy * fy - R * R;
+    const s = -b + Math.sqrt(b * b - c); return [q[0] + ux * s, q[1] + uy * s];
+  };
+  const paths = [];
+  for (let i = 0; i < 6; i++) {
+    const A = V[i], B = V[(i + 1) % 6], Pm = V[(i + 5) % 6];
+    const P = hit(A, B);  // edge i extended beyond B
+    const Q = hit(Pm, A); // previous edge extended beyond A
+    // short arc from P back to Q
+    const aP = Math.atan2(P[1] - cy, P[0] - cx), aQ = Math.atan2(Q[1] - cy, Q[0] - cx);
+    let dA = aQ - aP; while (dA > Math.PI) dA -= 2 * Math.PI; while (dA < -Math.PI) dA += 2 * Math.PI;
+    const sweep = dA > 0 ? 1 : 0;
+    paths.push(`M${A} L${B} L${P} A${R},${R} 0 0 ${sweep} ${Q} Z`);
+  }
+  return paths;
+}
+
+/* =================================================================== */
+const scenes = {
+
+/* 1 · APERTURA — tiempo 7 (t = 3,0 s): clic, el iris se cierra sobre la etiqueta */
+open() {
+  const pill = el('div', { left: '170px', top: '600px', width: '1100px', height: '240px', borderRadius: '120px',
+    background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' });
+  el('div', { font: "600 104px 'Geist'", letterSpacing: '-.035em', color: '#f3efe8' }, pill, 'javicebrian.es');
+  const cx = 720, cy = 720, R = 330;
+  const svg = document.createElementNS(NS, 'svg');
+  Object.assign(svg.style, { position: 'absolute', left: 0, top: 0 });
+  svg.setAttribute('width', 1440); svg.setAttribute('height', 1440);
+  irisPath(cx, cy, R, 128, 0).forEach((d, i) => {
+    const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d);
+    p.setAttribute('fill', i % 2 ? '#141414' : '#0b0b0b');
+    p.setAttribute('stroke', '#3b3936'); p.setAttribute('stroke-width', 2.5); p.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(p);
+  });
+  const ring = document.createElementNS(NS, 'circle');
+  ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', R);
+  ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', '#0b0b0b'); ring.setAttribute('stroke-width', 6);
+  svg.appendChild(ring); S.appendChild(svg);
+  cursor(758, 772, 1.35, true);
+},
+
+/* 2 · CRISTAL — tiempo 24 (t = 11,5 s): arrastre de día a hora dorada */
+glass() {
+  const knobX = 812; // stage x of the knob centre → also the wipe line between the two aligned shots
+  const backdrop = (p) => {
+    el('div', { position: 'absolute', inset: 0, background: portrait(0) }, p);
+    el('div', { position: 'absolute', inset: 0, background: portrait(1), clipPath: `inset(0 ${1440 - knobX}px 0 0)` }, p);
+  };
+  backdrop(S);
+  el('div', { left: '28px', top: '26px', font: "500 17px 'Geist'", letterSpacing: '.05em', color: 'rgba(255,255,255,.8)',
+    textTransform: 'uppercase' }, S, 'placeholder · retrato día / hora dorada (mismo encuadre)');
+
+  // toolbar → slider
+  const tb = { x: 200, y: 1112, w: 1040, h: 168, r: 84 };
+  const c = glass({ ...tb, band: 40, scale: 80, sceneFn: backdrop });
+  // adjust icon (active)
+  el('div', { left: '34px', top: '34px', width: '100px', height: '100px', borderRadius: '50px', background: 'rgba(11,11,11,.88)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center' }, c,
+    `<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#f3efe8" stroke-width="2" stroke-linecap="round">
+      <path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>`);
+  el('div', { left: '170px', top: '30px', font: "600 26px 'Geist'", color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.25)' }, c, 'Luz');
+  // track
+  const trackL = 170, trackR = tb.w - 60, trackY = 108;
+  el('div', { left: trackL + 'px', top: trackY + 'px', width: (trackR - trackL) + 'px', height: '8px', borderRadius: '4px',
+    background: 'rgba(255,255,255,.38)' }, c);
+  el('div', { left: trackL + 'px', top: trackY + 'px', width: (knobX - tb.x - trackL) + 'px', height: '8px', borderRadius: '4px',
+    background: '#fff' }, c);
+  el('div', { right: '60px', top: '30px', font: "500 24px 'Geist'", color: 'rgba(255,255,255,.92)' }, c, 'Hora dorada');
+
+  // held knob, already swelling into a lens (beat 26 preview: magnifies what's behind it)
+  const kd = 132, kx = knobX - kd / 2, ky = tb.y + trackY + 4 - kd / 2;
+  glass({ x: kx, y: ky, w: kd, h: kd, r: kd / 2, band: 52, scale: 110, magnify: 1.5, tint: 'rgba(255,255,255,.06)', sceneFn: backdrop });
+  cursor(knobX + 6, ky + kd / 2 + 8, 1.3, true);
+},
+
+/* 3 · ESCENARIO — tiempo 40 (t = 19,5 s): caso de éxito, el color pinta el segmento */
+stage() {
+  el('div', { inset: 0, background: 'var(--canvas)' });
+  const win = el('div', { left: '36px', top: '96px', width: '1368px', height: '1300px', borderRadius: '28px', background: '#fff',
+    boxShadow: '0 40px 90px rgba(40,30,10,.18), 0 0 0 1px rgba(0,0,0,.06)', overflow: 'hidden' });
+  // title bar + tab
+  const bar = el('div', { position: 'absolute', left: 0, top: 0, right: 0, height: '78px', background: '#f1eee9',
+    borderBottom: '1px solid #e2ddd4' }, win);
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((col, i) => el('div', { position: 'absolute', left: 30 + i * 30 + 'px', top: '30px',
+    width: '18px', height: '18px', borderRadius: '9px', background: col }, bar));
+  el('div', { position: 'absolute', left: '170px', top: '15px', width: '420px', height: '48px', borderRadius: '12px', background: '#fff',
+    boxShadow: '0 1px 3px rgba(0,0,0,.08)', font: "500 22px 'Geist'", display: 'flex', alignItems: 'center', paddingLeft: '22px',
+    boxSizing: 'border-box', color: '#2a2825' }, bar, '<span style="width:18px;height:18px;border-radius:5px;background:#0b0b0b;margin-right:12px"></span>javicebrian.es');
+  // nav
+  const nav = el('div', { position: 'absolute', left: 0, right: 0, top: '78px', height: '104px', display: 'flex', alignItems: 'center',
+    padding: '0 56px', boxSizing: 'border-box', gap: '44px', font: "500 24px 'Geist'", color: '#4a4741' }, win);
+  el('div', { fontFamily: 'Archivo', fontWeight: 800, fontVariationSettings: "'wdth' 125", fontSize: '30px', color: '#0b0b0b',
+    letterSpacing: '-.01em', marginRight: 'auto' }, nav, 'Javi Cebrián.');
+  ['Servicios', 'Casos', 'Sobre mí'].forEach(t => el('div', {}, nav, t));
+
+  // case card
+  const card = el('div', { position: 'absolute', left: '56px', top: '210px', width: '1256px', height: '1040px', borderRadius: '30px',
+    background: '#f6f3ee', overflow: 'hidden' }, win);
+  const ph = el('div', { position: 'absolute', left: '28px', top: '28px', width: '560px', height: '984px', borderRadius: '20px',
+    overflow: 'hidden' }, card, photo(2, 'placeholder · foto caso 01'));
+  const R = el('div', { position: 'absolute', left: '640px', top: '64px', right: '56px' }, card);
+  el('div', { font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Caso de éxito · 01');
+  el('div', { font: "700 58px/1.04 'Geist'", letterSpacing: '-.035em', marginTop: '18px' }, R, 'Más leads<br>cualificados,<br>menos ruido.');
+  // metric bar (drawing across)
+  el('div', { marginTop: '46px', fontFamily: 'Archivo', fontWeight: 800, fontVariationSettings: "'wdth' 125", fontSize: '112px',
+    lineHeight: 1, letterSpacing: '-.02em' }, R, '+38<span style="font-size:.6em"> %</span>');
+  const tr = el('div', { position: 'relative', marginTop: '18px', height: '18px', borderRadius: '9px', background: '#e4dfd6' }, R);
+  el('div', { position: 'absolute', left: 0, top: 0, bottom: 0, width: '74%', borderRadius: '9px', background: '#0b0b0b' }, tr);
+  el('div', { marginTop: '14px', font: "500 20px 'Geist'", color: 'var(--muted)' }, R, 'leads cualificados en 6 meses · <i>dato provisional</i>');
+
+  // segmented control — paint wiping from segment 1 to segment 2
+  el('div', { marginTop: '56px', font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Servicio');
+  const seg = el('div', { position: 'relative', marginTop: '14px', height: '76px', borderRadius: '38px', background: '#e9e4db',
+    display: 'flex', overflow: 'hidden' }, R);
+  const labels = ['Estrategia', 'Negocio', 'Marca', 'Audiovisual'];
+  const paint = el('div', { position: 'absolute', left: '6px', top: '6px', bottom: '6px', width: '242px', borderRadius: '32px',
+    background: '#0b0b0b' }, seg); // grown from seg 1 to half of seg 2 (spring in flight)
+  labels.forEach((t, i) => el('div', { position: 'relative', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    font: "600 22px 'Geist'", color: i < 1 ? '#f3efe8' : '#2a2825' }, seg, t));
+  // clip the label colour with the paint (text swap needs its own mask)
+  const segW = 556, cell = segW / 4;
+  const over = el('div', { position: 'absolute', inset: 0, display: 'flex', clipPath: `inset(6px ${segW - 248}px 6px 6px round 32px)` }, seg);
+  labels.forEach(t => el('div', { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    font: "600 22px 'Geist'", color: '#f3efe8' }, over, t));
+
+  el('div', { marginTop: '34px', font: "600 20px 'Geist'", letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)' }, R, 'Formato');
+  const chips = el('div', { marginTop: '14px', display: 'flex', gap: '14px' }, R);
+  ['Sprint · 4 semanas', 'Acompañamiento anual'].forEach(t => el('div', { padding: '20px 24px', borderRadius: '30px', whiteSpace: 'nowrap',
+    border: '2px solid #d8d1c5', font: "600 22px 'Geist'" }, chips, t));
+
+  // CTA (nav button lands here on beat 42)
+  el('div', { marginTop: '50px', height: '96px', borderRadius: '48px', background: '#0b0b0b', color: '#f3efe8', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', font: "600 30px 'Geist'", letterSpacing: '-.01em' }, R, 'Agenda una reunión →');
+
+  cursor(36 + 56 + 640 + 214, 96 + 210 + 664, 1.25, true);
+},
+
+/* 4 · PARED — tiempo 49 (t = 24,0 s): el negro se encoge en el cartel colgado */
+wall() {
+  // stand-in for the Pexels footage: warm plaster + moving plant shadows (a single frame of it)
+  el('div', { inset: 0, background: 'radial-gradient(120% 90% at 30% 20%, #efe6d8 0%, #e2d5c1 55%, #cdbca4 100%)' });
+  const sh = document.createElementNS(NS, 'svg');
+  Object.assign(sh.style, { position: 'absolute', inset: 0, mixBlendMode: 'multiply', opacity: .55 });
+  sh.setAttribute('width', 1440); sh.setAttribute('height', 1440);
+  let leaves = '';
+  for (let i = 0; i < 26; i++) {
+    const x = 980 + Math.sin(i * 2.1) * 300 + i * 9, y = 80 + i * 47 + Math.cos(i * 1.7) * 60, a = -40 + (i * 37) % 90;
+    leaves += `<ellipse cx="${x}" cy="${y}" rx="${70 + (i % 4) * 18}" ry="${22 + (i % 3) * 6}" transform="rotate(${a} ${x} ${y})"/>`;
+  }
+  sh.innerHTML = `<defs><filter id="soft"><feGaussianBlur stdDeviation="9"/></filter></defs>
+    <g fill="#8c7a63" filter="url(#soft)">${leaves}
+      <path d="M1440 0 C1240 300 1180 700 1010 1440" stroke="#8c7a63" stroke-width="10" fill="none"/></g>`;
+  S.appendChild(sh);
+  el('div', { left: '28px', top: '26px', font: "500 17px 'Geist'", letterSpacing: '.05em', color: 'rgba(60,45,30,.6)',
+    textTransform: 'uppercase' }, S, 'placeholder · metraje Pexels (pared + sombras de planta)');
+
+  // nail + framed print
+  const fx = 400, fy = 270, fw = 640, fh = 820, mold = 30, mat = 64;
+  el('div', { left: fx + 'px', top: fy + 'px', width: fw + 'px', height: fh + 'px', background: '#121212',
+    boxShadow: '-18px 30px 40px rgba(60,40,15,.28), -4px 8px 10px rgba(60,40,15,.25), inset 0 0 0 2px #262626' });
+  el('div', { left: fx + mold + 'px', top: fy + mold + 'px', width: fw - 2 * mold + 'px', height: fh - 2 * mold + 'px',
+    background: '#faf8f3', boxShadow: 'inset 3px 4px 8px rgba(0,0,0,.18)' });
+  const art = el('div', { left: fx + mold + mat + 'px', top: fy + mold + mat + 'px', width: fw - 2 * (mold + mat) + 'px',
+    height: fh - 2 * (mold + mat) - 70 + 'px', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.08)' });
+  el('div', { position: 'absolute', inset: 0, background: portrait(1) }, art);
+  el('div', { position: 'absolute', left: '26px', bottom: '22px', color: '#fff', fontFamily: 'Archivo', fontWeight: 800,
+    fontVariationSettings: "'wdth' 125", fontSize: '46px', lineHeight: .95, letterSpacing: '-.01em' }, art, 'Conecta.');
+  el('div', { left: fx + mold + mat + 'px', top: fy + fh - mold - mat - 48 + 'px', width: fw - 2 * (mold + mat) + 'px',
+    display: 'flex', justifyContent: 'space-between', font: "500 18px 'Geist'", color: '#5b574f' }, S,
+    '<span>javicebrian.es</span><span>Campaña · 2026</span>');
+}
+};
+
+window.render = async (name) => {
+  S.innerHTML = ''; defs.innerHTML = ''; gid = 0;
+  await document.fonts.load("800 100px Archivo"); await document.fonts.load("600 40px Geist");
+  await document.fonts.ready;
+  scenes[name]();
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+};
+const q = new URLSearchParams(location.search).get('scene');
+if (q) window.render(q);
+</script>
+</body>
+</html>
