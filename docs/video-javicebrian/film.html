@@ -26,6 +26,10 @@ const STAGE = document.getElementById('stage');
 const DEFS = document.getElementById('defs');
 const NS = 'http://www.w3.org/2000/svg';
 const DUR = 27, BEAT = 0.5;
+// Format. Square = 1440×1440. Vertical (?v=1) = 1440×2560 (9:16): the square composition sits in the middle
+// (offset OY) and full-bleed scenes extend to the whole frame; kinetic captions live in the top safe zone.
+const VERT = new URLSearchParams(location.search).get('v') === '1';
+const FH = VERT ? 2560 : 1440, OY = (FH - 1440) / 2;
 const INK = '#0b0b0b', CANVAS = '#f3efe8', PAPER = '#f6f3ee';
 
 /* ---------- math ---------- */
@@ -54,12 +58,16 @@ function track(t, v0, steps, o) {
 }
 const lerpRect = (a, b, k) => ({ x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), w: lerp(a.w, b.w, k), h: lerp(a.h, b.h, k), r: lerp(a.r ?? 0, b.r ?? 0, k) });
 const R = (x, y, w, h, r = 0) => ({ x, y, w, h, r });
+const FULL = () => R(0, -OY, 1440, FH);                         // whole visible frame, in square coordinates
 function trackRect(t, r0, steps, o) {
   const f = k => track(t, r0[k] ?? 0, steps.map(s => [s[0], s[1][k] ?? 0, s[2]]), o);
   return { x: f('x'), y: f('y'), w: f('w'), h: f('h'), r: Math.max(0, f('r')) };
 }
 
 /* ---------- DOM helpers ---------- */
+// full-bleed boxes: fullSq keeps square-authored images in cover framing, centred on the frame
+const fullSq = (p, css) => box(p, (1440 - FH) / 2, -OY, FH, FH, css);
+const fullBox = (p, css) => box(p, 0, -OY, 1440, FH, css);
 function box(p, x, y, w, h, css = {}, html = '') {
   const e = document.createElement('div');
   e.style.left = x + 'px'; e.style.top = y + 'px';
@@ -343,7 +351,7 @@ const icon = (name, size, color = '#f3efe8', sw = 1.8) =>
 function segA(t, S) {
   // camera: click on the portrait tile (7.5) zooms it to fill the square exactly on the drop (8.0)
   const zk = tw(t, 7.5, .5, ease.inOut);
-  const sc = lerp(1, 1440 / 588, zk), f = 414;
+  const sc = lerp(1, FH / 588, zk), f = 414;
   const tx = (1 - sc) * f + zk * (720 - f);
   const W = box(S, 0, 0, 1440, 1440, { transformOrigin: '0 0', transform: `translate(${tx}px,${tx}px) scale(${sc})` });
 
@@ -461,15 +469,15 @@ function photoCircleR(t) { return 250 * spring(t - 13.15, { w: 16, z: .82 }) + 9
 // the scene behind every glass element of segment B
 function sceneB(p, t, withPhoto = true) {
   if (t < 14.25) {
-    box(p, 0, 0, 1440, 1440, { background: portraitBg(0) });
-    const wx = t >= 13.0 ? 1440 : wipeX(t);
-    if (wx > 0) box(p, 0, 0, 1440, 1440, { background: portraitBg(1), clipPath: `inset(0 ${1440 - wx}px 0 0)` });
-  } else box(p, 0, 0, 1440, 1440, { background: CANVAS });
+    fullSq(p, { background: portraitBg(0) });
+    const wx = t >= 13.0 ? 1440 : wipeX(t), x0 = (1440 - FH) / 2;
+    if (wx > 0) fullSq(p, { background: portraitBg(1), clipPath: `inset(0 ${t >= 13.0 ? 0 : x0 + FH - wx}px 0 0)` });
+  } else fullBox(p, { background: CANVAS });
   const rc = photoCircleR(t);
   if (withPhoto && rc > 1) {
     const cx = ORB_C[0] - rc, cy = ORB_C[1] - rc;
     const m = box(p, cx, cy, 2 * rc, 2 * rc, { borderRadius: '50%', overflow: 'hidden' });
-    box(m, -cx, -cy, 1440, 1440, { background: photoBg('action', 2) });
+    box(m, -cx, -cy - OY, 1440, FH, { background: photoBg('action', 2) });
   }
 }
 let WORDB = null;
@@ -563,7 +571,7 @@ function segB(t, S) {
         band, scale: 96 * (1 - relax), magnify: mag, tint: `rgba(255,255,255,${.04 * (1 - relax)})`, rim: 1 - relax, scene: p => { sceneB(p, t); wallpaper(p, t); } });
     }
   }
-  if (t >= 13.5) lockScreen(S, t, true);
+  if (t >= 13.5) lockScreen(S, t, t < 14.3); // the orb block draws the wallpaper until 14.3
   drawCursor(S, t, 1.3);
 }
 
@@ -571,7 +579,7 @@ function segB(t, S) {
 const PHONE = R(520, 287, 400, 866, 56);
 function lockRect(t) {
   const orb = R(ORB_C[0] - 280, ORB_C[1] - 280, 560, 560, 280);
-  return trackRect(t, orb, [[13.5, R(-10, -10, 1460, 1460, 0), { w: 14, z: 1 }], [15.0, PHONE, { w: 12, z: .86 }],
+  return trackRect(t, orb, [[13.5, R(-10, -OY - 10, 1460, FH + 20, 0), { w: 14, z: 1 }], [15.0, PHONE, { w: 12, z: .86 }],
     [15.75, R(130, 287, 400, 866, 56), { w: 12, z: .86 }]]);
 }
 const lockP = t => spring(t - 15.0, { w: 12, z: .86 });
@@ -584,7 +592,8 @@ const LK = {
   home: [R(620, 1396, 200, 12, 6), R(130, 846, 140, 5, 2.5)],
 };
 function lk(t, key) {
-  const [sq, ph] = LK[key], L = lockRect(t), p = lockP(t);
+  let [sq, ph] = LK[key]; const L = lockRect(t), p = lockP(t);
+  if (VERT && key === 'home') sq = R(620, 1440 + OY - 44, 200, 12, 6); // home bar at the bottom of the tall screen
   const sx = L.w / 400, sy = L.h / 866;
   const phAbs = R(L.x + ph.x * sx, L.y + ph.y * sy, ph.w * sx, ph.h * sy, ph.r * sx);
   return { r: lerpRect(sq, phAbs, p), s: lerp(1, phAbs.w / sq.w, p) };
@@ -592,10 +601,10 @@ function lk(t, key) {
 function wallpaper(p, t) { // the lock-screen wallpaper (also the scene behind its glass)
   const L = lockRect(t);
   const m = rbox(p, L, { overflow: 'hidden' });
-  const img = lerpRect(R(0, 0, 1440, 1440), L, lockP(t)); // same framing as the orb's photo until the pull-back
+  const img = lerpRect(FULL(), L, lockP(t)); // same framing as the orb's photo until the pull-back
   box(m, img.x - L.x, img.y - L.y, img.w, img.h, { background: photoBg('action', 2) });
 }
-function lockScene(t) { return p => { if (t < 14.25) sceneB(p, t, false); else box(p, 0, 0, 1440, 1440, { background: CANVAS }); wallpaper(p, t); }; }
+function lockScene(t) { return p => { if (t < 14.25) sceneB(p, t, false); else fullBox(p, { background: CANVAS }); wallpaper(p, t); }; }
 function lockScreen(S, t, wallDrawn = false) {
   const L = lockRect(t);
   // bezel grows from the screen edge (15.0)
@@ -698,7 +707,7 @@ const CHIP1 = R(700, 1016, 262, 64, 32), CHIP2 = R(978, 1016, 230, 64, 32);
 const NAVBTN = R(1222, 102, 162, 56, 28), CTA = R(700, 1170, 640, 120, 60);
 
 function segC(t, S, withCursor = true) {
-  box(S, 0, 0, 1440, 1440, { background: CANVAS });
+  fullBox(S, { background: CANVAS });
   // phone (screen content continues from segment B)
   if (t < 19.0) lockScreen(S, t);
   if (t >= 16.5) drawWindow(S, t);
@@ -820,11 +829,12 @@ function landing(P, t, dx) {
 /* =====================================================================
    SEGMENT D · conversion · beats 43–46 (21–23 s): one black shape keeps changing
    ===================================================================== */
+const FLOOD_R = Math.hypot(780, 780 + OY); // passes the corners of the whole frame
 const S43 = R(270, 620, 900, 200, 100), S45 = R(370, 400, 700, 640, 56), S46 = R(460, 460, 520, 520, 260);
 function shapeD(t) { return trackRect(t, CTA, [[21.0, S43, { w: 14, z: .78 }], [22.0, S45, { w: 13, z: .8 }], [22.5, S46, { w: 14, z: .78 }]]); }
 function segD(t, S) {
   // camera: page zooms around the button as it detaches
-  const zk = spring(t - 21.0, { w: 9, z: 1 }), s = lerp(1, 1.45, zk);
+  const zk = VERT ? 0 : spring(t - 21.0, { w: 9, z: 1 }), s = lerp(1, 1.45, zk); // vertical: page stays put, captions keep the top zone
   const f = [CTA.x + CTA.w / 2, CTA.y + CTA.h / 2];
   const tx = (1 - s) * f[0] + zk * (720 - f[0]), ty = (1 - s) * f[1] + zk * (720 - f[1]);
   const cam = box(S, 0, 0, 1440, 1440, { transformOrigin: '0 0', transform: `translate(${tx}px,${ty}px) scale(${s})` });
@@ -832,7 +842,7 @@ function segD(t, S) {
   const r = shapeD(t);
   // 47 · the circle floods the frame (≈0.3 s, beyond the corners)
   if (t >= 23.0) {
-    const fr = lerp(260, 1120, tw(t, 23.0, .3, ease.in));
+    const fr = lerp(260, FLOOD_R, tw(t, 23.0, .3, ease.in));
     rbox(S, R(720 - fr, 720 - fr, 2 * fr, 2 * fr, fr), { background: INK });
     return;
   }
@@ -881,34 +891,35 @@ function segD(t, S) {
 /* =====================================================================
    SEGMENT E · "Resultado" · beats 47–54 (23–27 s) · breakdown → return beat
    ===================================================================== */
+const FILL_S = VERT ? 4.9 : 3.4; // the black art must cover the whole frame
 const FRAME = R(400, 270, 640, 820, 0), MAT = R(430, 300, 580, 760), ART = R(494, 364, 452, 562);
 let VIDEO = null, VCANVAS = null;
 async function drawWall(S, t) {
-  const c = document.createElement('canvas'); c.width = 1440; c.height = 1440;
-  c.style.left = 0; c.style.top = 0; S.appendChild(c);
+  const c = document.createElement('canvas'); c.width = 1440; c.height = FH;
+  c.style.left = 0; c.style.top = -OY + 'px'; S.appendChild(c);
   const g = c.getContext('2d');
   if (VIDEO) {
     const vt = clamp(t - 23.5, 0, VIDEO.duration - .05);
     if (Math.abs(VIDEO.currentTime - vt) > 1e-4) { VIDEO.currentTime = vt; await new Promise(r => VIDEO.addEventListener('seeked', r, { once: true })); }
-    const vw = VIDEO.videoWidth, vh = VIDEO.videoHeight, s = Math.max(1440 / vw, 1440 / vh);
-    g.drawImage(VIDEO, (1440 - vw * s) / 2, (1440 - vh * s) / 2, vw * s, vh * s);
-  } else { g.fillStyle = '#e4d8c6'; g.fillRect(0, 0, 1440, 1440); }
+    const vw = VIDEO.videoWidth, vh = VIDEO.videoHeight, s = Math.max(1440 / vw, FH / vh);
+    g.drawImage(VIDEO, (1440 - vw * s) / 2, (FH - vh * s) / 2, vw * s, vh * s);
+  } else { g.fillStyle = '#e4d8c6'; g.fillRect(0, 0, 1440, FH); }
 }
 function artContent(p) {
   box(p, ART.x, ART.y, ART.w, ART.h, { background: portraitBg(1) });
   box(p, ART.x + 26, ART.y + ART.h - 76, 400, 56, { font: "800 50px/56px Archivo", fontStretch: '125%', letterSpacing: '-.01em', color: '#fff' }, 'Mueve.');
 }
 async function segE(t, S) {
-  if (t < 24.0) { box(S, 0, 0, 1440, 1440, { background: INK }); return; }
+  if (t < 24.0) { fullBox(S, { background: INK }); return; }
   // 52 · the frame fills the screen (black art grows past the corners)
   const fk = tw(t, 25.5, .35, ease.in);
-  const fs = lerp(1, 3.4, fk), fc = [ART.x + ART.w / 2, ART.y + ART.h / 2];
+  const fs = lerp(1, FILL_S, fk), fc = [ART.x + ART.w / 2, ART.y + ART.h / 2];
   const ftx = (1 - fs) * fc[0] + fk * (720 - fc[0]), fty = (1 - fs) * fc[1] + fk * (720 - fc[1]);
   if (t < 26.0) {
     await drawWall(S, t);
     const cam = box(S, 0, 0, 1440, 1440, { transformOrigin: '0 0', transform: `translate(${ftx}px,${fty}px) scale(${fs})` });
     // 49 · the black shrinks into the framed print (molding first, then the mat grows from the art's edge)
-    const fr = lerpRect(R(-60, -60, 1560, 1560), FRAME, spring(t - 24.0, { w: 12, z: .86 }));
+    const fr = lerpRect(R(-60, -OY - 60, 1560, FH + 120), FRAME, spring(t - 24.0, { w: 12, z: .86 }));
     const sh = spring(t - 24.0, { w: 12, z: 1 });
     const mc = Math.round(lerp(11, 18, sh));
     rbox(cam, fr, { background: `rgb(${mc},${mc},${mc})`, boxShadow: `${-18 * sh}px ${30 * sh}px ${40 * sh}px rgba(60,40,15,${.28 * sh}), ${-4 * sh}px ${8 * sh}px 10px rgba(60,40,15,${.25 * sh})` });
@@ -930,9 +941,51 @@ async function segE(t, S) {
     return;
   }
   // 53 · black → pill → dot · 54 · letters spring back out (= frame 1)
-  const r = trackRect(t, R(-60, -60, 1560, 1560, 0), [[26.0, PILL, { w: 20, z: .9 }], [26.25, WM.dot, { w: 22, z: .95 }]]);
+  const r = trackRect(t, R(-60, -OY - 60, 1560, FH + 120, 0), [[26.0, PILL, { w: 20, z: .9 }], [26.25, WM.dot, { w: 22, z: .95 }]]);
   if (t < 26.5) rbox(S, r, { background: INK });
   else drawWordmark(S, spring(t - 26.5, { w: 21, z: .8 }), r);
+}
+
+/* =====================================================================
+   CAPTIONS · vertical cut only. Top safe zone (below the Reels header). Most Reels play muted,
+   so the story is carried in text. Ink by default; a light copy is clipped to the dark shape covering it.
+   ===================================================================== */
+const CAPS = [
+  [-9, 2.0, 'Comunicación que mueve<br>organizaciones.'],
+  [2.0, 8.0, 'Tres palancas: comunicación,<br>sostenibilidad e IA.'],
+  [8.0, 13.0, 'De la intención<br>a la decisión.'],
+  [13.0, 15.0, 'Mensajes claros<br>traen consultas.'],
+  [15.0, 18.5, 'Del móvil a la web,<br>sin fricción.'],
+  [18.5, 21.0, '+20 años en medios,<br>gabinetes y agencias.'],
+  [21.0, 23.25, 'Mensaje, diagnóstico,<br>reunión, decisión.'],
+  [23.25, 25.5, 'Resultados que se ven<br>fuera de la pantalla.'],
+  [25.5, 99, 'Comunicación que mueve<br>organizaciones.'],
+];
+function darkClip(t) {
+  const ins = r => `inset(${r.y + OY}px ${1440 - r.x - r.w}px ${FH - (r.y + OY + r.h)}px ${r.x}px round ${r.r || 0}px)`;
+  if (t >= 13.5 && t < 15.8) return ins(lockRect(t));
+  if (t >= 23.0 && t < 24.0) return `circle(${lerp(260, FLOOD_R, tw(t, 23.0, .3, ease.in))}px at 720px ${720 + OY}px)`;
+  if (t >= 24.0 && t < 25.5) return ins(lerpRect(R(-60, -OY - 60, 1560, FH + 120), FRAME, spring(t - 24.0, { w: 12, z: .86 })));
+  if (t >= 25.5 && t < 26.0) {
+    const fk = tw(t, 25.5, .35, ease.in), fs = lerp(1, FILL_S, fk), cx = ART.x + ART.w / 2, cy = ART.y + ART.h / 2;
+    return ins(R(lerp(cx, 720, fk) - ART.w * fs / 2, lerp(cy, 720, fk) - ART.h * fs / 2, ART.w * fs, ART.h * fs));
+  }
+  if (t >= 26.0 && t < 26.5) return ins(trackRect(t, R(-60, -OY - 60, 1560, FH + 120, 0), [[26.0, PILL, { w: 20, z: .9 }], [26.25, WM.dot, { w: 22, z: .95 }]]));
+  return null;
+}
+function captions(S, t) {
+  const y = 330, h = 2 * 86 + 10, w = 1300;
+  const layer = (color, clip) => {
+    const L = box(S, 0, 0, 1440, FH, clip ? { clipPath: clip } : {});
+    CAPS.forEach(([t0, t1, txt]) => {
+      if (t < t0 - .01 || t > t1 + .6) return;
+      rise(L, 70, y, w, h, txt, { font: "700 74px/86px Geist", letterSpacing: '-.035em', color, textAlign: 'center', width: w + 'px', whiteSpace: 'normal' },
+        t, t0 + .04, { w: 19, z: .82 }, t1 < 90 ? t1 : null);
+    });
+  };
+  layer(INK, null);
+  const dc = darkClip(t);
+  if (dc) layer('#f6f3ee', dc);
 }
 
 /* =====================================================================
@@ -942,16 +995,19 @@ async function seek(t) {
   t = ((t % DUR) + DUR) % DUR;
   STAGE.innerHTML = ''; DEFS.innerHTML = ''; fid = 0; iid = 0; gooFilter();
   STAGE.style.background = CANVAS;
-  if (t < 8.0) segA(t, STAGE);
-  else if (t < 15.0) segB(t, STAGE);
-  else if (t < 21.0) segC(t, STAGE);
-  else if (t < 23.5 || (t < 24.0)) segD(t, STAGE);
-  else await segE(t, STAGE);
+  const SQ = box(STAGE, 0, OY, 1440, 1440);   // square composition; full-bleed layers reach outside it
+  if (t < 8.0) segA(t, SQ);
+  else if (t < 15.0) segB(t, SQ);
+  else if (t < 21.0) segC(t, SQ);
+  else if (t < 24.0) segD(t, SQ);
+  else await segE(t, SQ);
+  if (VERT) captions(STAGE, t);
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 }
 window.seek = seek;
 
 window.ready = (async () => {
+  STAGE.style.height = FH + 'px';
   await document.fonts.load("800 100px Archivo"); await document.fonts.load("600 40px Geist"); await document.fonts.load("500 40px Geist");
   await document.fonts.load("700 40px Geist"); await document.fonts.ready;
   await Promise.all(Object.entries(ASSETS).map(async ([k, u]) => {

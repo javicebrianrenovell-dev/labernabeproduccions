@@ -5,11 +5,12 @@ import { createRequire } from 'module';
 const { chromium } = createRequire(import.meta.url)(process.env.PW);
 const [mode, out, fpsArg, wArg, nwArg, t0Arg, t1Arg] = process.argv.slice(2);
 const URL = process.env.FILM_URL || 'http://127.0.0.1:8765/film.html';
+const H = +(process.env.FILM_H || 1440);
 const b = await chromium.launch({ args: ['--disable-gpu-vsync', '--disable-frame-rate-limit'] });
-const p = await b.newPage({ viewport: { width: 1440, height: 1440 } });
+const p = await b.newPage({ viewport: { width: 1440, height: H } });
 p.on('pageerror', e => console.log('ERR', e.message));
 await p.goto(URL); await p.evaluate(() => window.ready);
-const shot = async (t, path) => { await p.evaluate(t => window.seek(t), t); await p.screenshot({ path, type: path.endsWith('.jpg') ? 'jpeg' : 'png', quality: path.endsWith('.jpg') ? 93 : undefined, clip: { x: 0, y: 0, width: 1440, height: 1440 } }); };
+const shot = async (t, path) => { await p.evaluate(t => window.seek(t), t); await p.screenshot({ path, type: path.endsWith('.jpg') ? 'jpeg' : 'png', quality: path.endsWith('.jpg') ? 93 : undefined, clip: { x: 0, y: 0, width: 1440, height: H } }); };
 if (mode === 'beats') {
   for (let bt = 1; bt <= 54; bt++) await shot((bt - 1) * .5 + .42, `${out}/beat${String(bt).padStart(2, '0')}.png`);
 } else if (mode === 'at') {
