@@ -11,7 +11,8 @@ El último fotograma es igual al primero.
 | `stills.html`, `stills/` | Los 4 fotogramas de validación iniciales |
 | `out/film.mp4` | Máster 1440×1440 a 60 fps, sin sonido de momento (ver *Sonido*) |
 | `out/film-1080.mp4` | 1080×1080 para el feed de LinkedIn e Instagram |
-| `out/film-vertical-9x16.mp4` | 1080×1920 para Reels y Stories (el cuadrado sobre fondo blanco roto) |
+| `out/film-reels-9x16.mp4` | **Reel nativo 9:16** (1080×1920, 60 fps): escenas a pantalla completa y subtítulos al ritmo en la zona segura. Se genera con `film.html?v=1` |
+| `out/reels-cover.jpg`, `reels-copy.md` | Portada del Reel y texto de publicación |
 | `out/poster.jpg`, `out/preview.gif` | Imagen fija del primer fotograma para la web, y vista previa ligera |
 | `out/contact-sheet.png` | Un fotograma por tiempo, para revisión |
 | `audio/sfx-cues.json` | Hoja de 58 efectos: tiempo, nombre, búsqueda en Mixkit y ganancia |
@@ -34,6 +35,7 @@ cd docs/video-javicebrian
 python3 -m http.server 8765 --bind 127.0.0.1 &      # el metraje se carga como blob, que no necesita range-seek
 export PW=$(npm root -g)/playwright
 for w in 0 1 2; do node tools/render.mjs frames /tmp/frames 240 $w 3 & done; wait
+# Reel 9:16: FILM_URL='http://127.0.0.1:8765/film.html?v=1' FILM_H=2560 (mismo comando)
 tools/assemble.sh /tmp/frames out/film.mp4             # 4 subfotogramas por fotograma (tmix), 60 fps
 python3 tools/qa.py out/film.mp4                       # saltos de un fotograma, pausas > 1 s y costura del bucle
 node tools/render.mjs beats /tmp/beats && python3 tools/contact.py /tmp/beats out/contact-sheet.png

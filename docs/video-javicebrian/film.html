@@ -263,8 +263,10 @@ function cursorAt(t) {
   const pressed = PRESS.some(([a, b]) => t >= a && t < b);
   return { x, y, pressed };
 }
+const NOCURSOR = new URLSearchParams(location.search).get('nocursor') === '1'; // stills/covers only
 function drawCursor(p, t, scale) {
   const c = cursorAt(t);
+  if (NOCURSOR) return c;
   if (c.x > 1500 || c.y > 1500) return c;
   const s = scale * (c.pressed ? .86 : 1);
   box(p, c.x - 3 * s, c.y - 3 * s, 40, 56, { transformOrigin: '0 0', transform: `scale(${s})`, zIndex: 50 }, CURSOR_SVG);
